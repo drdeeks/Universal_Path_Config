@@ -991,10 +991,19 @@ async function verifyCrossPlatformSetup(results, event) {
     if (distributions.length === 0) {
       // Try one more approach - direct WSL test
       try {
-        await runCommandWithTimeout('wsl echo "test"', 2000);
-        results.issues.push('WSL is available but cannot detect distribution names - manual configuration needed');
-        event.sender.send('setup-output', '[WARN] WSL works but distribution detection failed');
-        event.sender.send('setup-output', '[INFO] You can manually configure WSL by adding aliases to ~/.bashrc');
+        // Try multiple WSL commands to ensure detection
+        try {
+          await runCommandWithTimeout('wsl --status', 3000);
+          await runCommandWithTimeout('wsl echo "test"', 5000);
+          results.fixes.push('WSL is available but distribution names unclear - manual configuration may be needed');
+          event.sender.send('setup-output', '[OK] WSL is working - distribution detection needs refinement');
+          event.sender.send('setup-output', '[INFO] You can manually configure WSL by adding aliases to ~/.bashrc');
+          return; // WSL is working, just distribution parsing failed
+        } catch (statusError) {
+          results.issues.push('WSL is installed but no valid distributions found - install Ubuntu or another distribution');
+          event.sender.send('setup-output', '[WARN] No WSL distributions found or WSL not working');
+          event.sender.send('setup-output', '[INFO] To install Ubuntu: wsl --install -d Ubuntu');
+        }
       } catch (testError) {
         results.issues.push('WSL is installed but no valid distributions found - install Ubuntu or another distribution');
         event.sender.send('setup-output', '[WARN] No WSL distributions found or WSL not working');
