@@ -3,14 +3,23 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 
-# Electron build output (keep only portable exe)
+# Electron build output and executables
 dist/
-!dist/Universal Dev Setup *.exe
-!dist/latest.yml
 build/
 out/
 release/
+app-builds/
+
+# ALL executable files (too large for git)
+*.exe
+*.msi
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.appimage
 
 # OS generated files
 .DS_Store
@@ -21,11 +30,6 @@ release/
 ehthumbs.db
 Thumbs.db
 desktop.ini
-
-# Windows executable files (except final distribution)
-*.exe
-!Universal Dev Setup *.exe
-*.msi
 
 # Logs
 logs/
@@ -55,52 +59,79 @@ coverage/
 .vscode/settings.json
 .vscode/launch.json
 .vscode/extensions.json
+.vscode/tasks.json
+.vscode/c_cpp_properties.json
 .idea/
 *.swp
 *.swo
 *~
 
-# Temporary folders
+# Temporary folders and files
 tmp/
 temp/
+*.tmp
+*.temp
 
 # Cache directories
 .cache/
 .parcel-cache/
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
+.npm/
 .eslintcache
 
-# Output of 'npm pack'
+# Build artifacts and generated files
+builder-effective-config.yaml
+builder-debug.yml
+latest.yml
 *.tgz
+*.tar.gz
 
-# Yarn Integrity file
+# Yarn files
 .yarn-integrity
+.pnp.*
+.yarn/
 
 # dotenv environment variables file
-.env
-.env.test
+.env*
 
 # Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# Electron-builder output
-/app-builds
-
-# Local development files
-*.local
+.vscode-test/
 
 # Backup files created by the application
 *backup*
 *.bak
+*-backup-*/
 
 # User data from running the application
 AppData/
 userData/
 
-# Build artifacts that shouldn't be tracked
-builder-effective-config.yaml
-latest.yml 
+# Development and local files
+*.local
+*.development
+
+# Windows specific
+*.lnk
+
+# macOS specific
+.AppleDouble
+.LSOverride
+Icon?
+
+# Linux specific
+*~
+
+# Electron specific
+.electron/
+electron-builder-effective-config.yaml
+
+# Application specific cleanup
+dev-env-cleanup-backup*/
+
+# Documentation that might be auto-generated
+REBUILD-COMPLETION-SUMMARY.md
+CURRENT-STATUS-v*.md
+
+# Test files and outputs
+test-results/
+coverage/
+.nyc_output/ 
