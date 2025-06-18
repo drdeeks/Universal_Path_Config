@@ -1,7 +1,7 @@
 {
   "name": "universal-dev-setup",
-  "version": "1.2.0",
-  "description": "Universal Development Environment Setup - Electron App",
+  "version": "1.3.0",
+  "description": "Universal Development Environment Setup - Electron App with Project & Tool Migration",
   "main": "src/main.js",
   "homepage": "https://github.com/universal-dev-setup/universal-dev-setup",
   "scripts": {
@@ -30,7 +30,12 @@
     "wsl",
     "python-detection",
     "admin-privileges",
-    "cleanup"
+    "cleanup",
+    "migration",
+    "project-organization",
+    "tool-scanning",
+    "file-migration",
+    "centralized-development"
   ],
   "author": {
     "name": "Universal Dev Setup Team",
@@ -129,7 +134,7 @@
       "repo": "universal-dev-setup"
     },
     "releaseInfo": {
-      "releaseNotes": "Universal Development Environment Setup Tool v1.2.0 - Enhanced Python detection, robust path configuration, comprehensive cleanup system, and improved session management."
+      "releaseNotes": "Universal Development Environment Setup Tool v1.3.0 - NEW: Comprehensive Project & Tool Migration system with smart scanning, centralized organization, and safe backup operations. Enhanced environment management with selective migration capabilities."
     }
   }
 } 

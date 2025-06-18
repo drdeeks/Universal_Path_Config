@@ -252,3 +252,141 @@ MIT License - See [LICENSE](LICENSE) for details.
 ---
 
 **Universal Dev Setup v1.2.0** - Your complete Windows development environment, professionally automated. ✨ 
+
+## Features
+
+- 🔐 **Administrator Privilege Checking**: Automatically detects and validates administrator privileges required for system modifications
+- ⚙️ **Tool Installation & Configuration**: Installs and configures Git, WSL, VS Code, Docker, Node.js, Python, and PowerShell
+- 🔍 **Environment Verification**: Comprehensive verification of directory structure, configuration files, and tool integrations
+- 🧹 **Duplicate Cleanup**: Identifies and removes duplicate configuration files and settings across different locations
+- 📊 **Real-time Status**: Live monitoring of tool installation status and system configuration
+- 💻 **Cross-platform Integration**: Seamless Windows and WSL environment integration
+- 🛡️ **Safe Operations**: Backup creation before any system modifications
+- 📦 **Project & Tool Migration**: Comprehensive migration system for organizing existing projects, tools, and configurations
+- 🔄 **Smart Scanning**: Automatically detects existing development tools and project directories across your system
+- 📁 **Centralized Organization**: Migrate everything to a single, well-organized directory structure 
+
+## Post-Installation
+
+After successful setup, you'll have access to these enhanced PowerShell functions:
+
+### Navigation Commands
+- `cdw` - Navigate to Windows home directory
+- `cdwsl` - Navigate to WSL home directory  
+- `cdprojects` - Navigate to Projects directory
+- `cdcode` - Navigate to VS Code workspace
+
+### Development Commands
+- `new-project [name]` - Create new project with standard structure
+- `dev-status` - Check development environment status
+- `dev-update` - Update development environment
+- `sync-env` - Synchronize configurations between Windows and WSL
+
+### System Commands
+- `restart-dev` - Restart development services
+- `backup-configs` - Backup current configurations
+
+## Project & Tool Migration
+
+The Universal Dev Setup now includes powerful migration capabilities to help you organize your existing development environment. This feature allows you to consolidate all your projects, tools, and configurations into a single, well-organized location.
+
+### How Migration Works
+
+1. **Target Directory Selection**: Choose where you want your centralized development environment to be located
+2. **Smart Scanning**: The app automatically scans your system for:
+   - Development tools (Git, Node.js, Python, VS Code, Docker, etc.)
+   - Project directories across common locations
+   - Configuration files (PowerShell profiles, Git config, SSH keys, etc.)
+3. **Selective Migration**: Choose exactly what you want to migrate with checkboxes
+4. **Safe Migration**: Creates backups before moving anything
+5. **Organized Structure**: Creates a clean directory structure in your target location
+
+### Migration Features
+
+#### 🔍 **Comprehensive Scanning**
+- Scans system-wide for development tools in common installation paths
+- Finds project directories in typical locations (Documents, Desktop, C:\ drives)
+- Locates configuration files across Windows and user directories
+- Handles wildcard patterns for version-specific tool installations
+
+#### 📦 **Organized Directory Structure**
+The migration creates a clean, organized structure:
+```
+Your-Target-Directory/
+├── Projects/           # All your project directories
+├── Tools/             # Development tools organized by type
+│   ├── git/
+│   ├── nodejs/
+│   ├── python/
+│   └── ...
+├── Configs/           # Configuration files
+├── Scripts/           # Utility scripts
+├── Documentation/     # Project documentation
+└── migration-backup/ # Backup of original files
+```
+
+#### 🛡️ **Safe Operations**
+- **Automatic Backups**: Creates timestamped backups before any migration
+- **Merge Options**: Choose to merge with existing files or skip duplicates
+- **Progress Tracking**: Real-time progress updates and detailed logging
+- **Error Handling**: Comprehensive error reporting and recovery
+
+#### 📊 **Migration Results**
+After migration, you get:
+- Detailed summary of migrated items
+- File count and size information
+- Backup location details
+- Any errors or warnings
+- Next steps for updating your environment
+
+### Using the Migration Feature
+
+1. **Open Migration Section**: Click on the "📦 Project & Tool Migration" section
+2. **Select Target Directory**: Click "Browse" to choose where to organize everything
+3. **Scan Your System**: Click "Scan for Tools & Projects" to find existing items
+4. **Choose What to Migrate**: Use checkboxes to select items for migration
+5. **Configure Options**: 
+   - ✅ Create backup before migration (recommended)
+   - ✅ Merge with existing files
+6. **Start Migration**: Click "Start Migration" and monitor progress
+7. **Review Results**: Check the migration summary and follow next steps
+
+### What Gets Migrated
+
+#### Development Tools
+- Git installations and configurations
+- Node.js and npm
+- Python installations and packages
+- Visual Studio Code
+- Docker Desktop
+- PowerShell profiles
+- Java JDK, Maven, Gradle
+- Go, Rust toolchains
+- WSL distributions
+
+#### Project Directories
+- Personal projects from Documents, Desktop
+- Code repositories from various drives
+- Development workspaces
+- Project-specific configurations
+
+#### Configuration Files
+- Git global configuration
+- SSH keys and configuration
+- PowerShell profiles
+- VS Code settings and keybindings
+- Terminal configurations
+- Environment variables
+- NPM and package manager configs
+
+### Post-Migration Steps
+
+After migration, you should:
+
+1. **Update Environment Variables**: Point PATH and other variables to new tool locations
+2. **Update IDE Settings**: Configure your IDE to use tools from new locations
+3. **Test Tool Access**: Verify all tools are accessible from command line
+4. **Update Project References**: Check that projects still reference correct dependencies
+5. **Backup Cleanup**: Review and clean up old backup files when satisfied
+
+The migration feature makes it easy to maintain a clean, organized development environment and ensures all your tools and projects are easily accessible from a central location. 

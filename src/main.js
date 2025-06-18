@@ -1818,4 +1818,409 @@ function checkToolInstalled(tool) {
       resolve({ installed: false, version: null });
     });
   });
+}
+
+// Add new IPC handlers for project migration features
+ipcMain.handle('select-projects-directory', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select Projects Directory',
+      defaultPath: path.join(os.homedir(), 'Projects'),
+      properties: ['openDirectory', 'createDirectory'],
+      buttonLabel: 'Select Projects Directory'
+    });
+    
+    if (!result.canceled && result.filePaths.length > 0) {
+      return {
+        success: true,
+        path: result.filePaths[0]
+      };
+    } else {
+      return {
+        success: false,
+        message: 'No directory selected'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+});
+
+ipcMain.handle('scan-for-existing-tools', async () => {
+  try {
+    const scanResults = {
+      tools: [],
+      projectDirectories: [],
+      configurationFiles: [],
+      totalFilesFound: 0
+    };
+    
+    // Define common tool installation paths and patterns
+    const toolScanPaths = [
+      // Development tools
+      { name: 'Git', paths: ['C:\\Program Files\\Git', 'C:\\Program Files (x86)\\Git'], type: 'git' },
+      { name: 'Node.js', paths: ['C:\\Program Files\\nodejs', 'C:\\Program Files (x86)\\nodejs'], type: 'nodejs' },
+      { name: 'Python', paths: ['C:\\Python*', 'C:\\Program Files\\Python*', path.join(os.homedir(), 'AppData\\Local\\Programs\\Python')], type: 'python' },
+      { name: 'VS Code', paths: ['C:\\Program Files\\Microsoft VS Code', 'C:\\Program Files (x86)\\Microsoft VS Code', path.join(os.homedir(), 'AppData\\Local\\Programs\\Microsoft VS Code')], type: 'vscode' },
+      { name: 'Docker Desktop', paths: ['C:\\Program Files\\Docker\\Docker'], type: 'docker' },
+      { name: 'Docker CLI', paths: ['C:\\ProgramData\\DockerDesktop'], type: 'docker-cli' },
+      { name: 'Windows Terminal', paths: [path.join(os.homedir(), 'AppData\\Local\\Microsoft\\WindowsApps\\wt.exe')], type: 'terminal' },
+      { name: 'PowerShell Core', paths: ['C:\\Program Files\\PowerShell', 'C:\\Program Files (x86)\\PowerShell'], type: 'powershell' },
+      { name: 'Java JDK', paths: ['C:\\Program Files\\Java', 'C:\\Program Files (x86)\\Java'], type: 'java' },
+      { name: 'Maven', paths: ['C:\\Program Files\\Apache\\Maven', 'C:\\apache-maven*'], type: 'maven' },
+      { name: 'Gradle', paths: ['C:\\Gradle', path.join(os.homedir(), '.gradle')], type: 'gradle' },
+      { name: 'Go', paths: ['C:\\Program Files\\Go', 'C:\\Go'], type: 'go' },
+      { name: 'Rust', paths: [path.join(os.homedir(), '.cargo'), path.join(os.homedir(), '.rustup')], type: 'rust' },
+      { name: 'WSL Ubuntu', paths: ['\\\\wsl$\\Ubuntu', '\\\\wsl.localhost\\Ubuntu'], type: 'wsl' }
+    ];
+    
+    // Scan for project directories in common locations
+    const projectScanPaths = [
+      path.join(os.homedir(), 'Projects'),
+      path.join(os.homedir(), 'Documents', 'Projects'),
+      path.join(os.homedir(), 'Desktop', 'Projects'),
+      path.join(os.homedir(), 'Code'),
+      path.join(os.homedir(), 'Documents', 'Code'),
+      path.join(os.homedir(), 'Development'),
+      path.join(os.homedir(), 'Dev'),
+      path.join(os.homedir(), 'Workspace'),
+      path.join(os.homedir(), 'Source'),
+      'C:\\Projects',
+      'C:\\Code',
+      'C:\\Development',
+      'D:\\Projects',
+      'D:\\Code',
+      'D:\\Development'
+    ];
+    
+    // Scan for tools
+    for (const tool of toolScanPaths) {
+      for (const searchPath of tool.paths) {
+        try {
+          // Handle wildcard paths
+          if (searchPath.includes('*')) {
+            const basePath = searchPath.replace(/\*.*$/, '');
+            const pattern = searchPath.split('\\').pop();
+            
+            if (fs.existsSync(basePath)) {
+              const items = fs.readdirSync(basePath);
+              const matches = items.filter(item => {
+                return item.toLowerCase().includes(pattern.replace('*', '').toLowerCase());
+              });
+              
+              for (const match of matches) {
+                const fullPath = path.join(basePath, match);
+                if (fs.existsSync(fullPath)) {
+                  scanResults.tools.push({
+                    name: `${tool.name} (${match})`,
+                    path: fullPath,
+                    type: tool.type,
+                    size: getDirectorySize(fullPath)
+                  });
+                }
+              }
+            }
+          } else {
+            // Direct path check
+            if (fs.existsSync(searchPath)) {
+              scanResults.tools.push({
+                name: tool.name,
+                path: searchPath,
+                type: tool.type,
+                size: getDirectorySize(searchPath)
+              });
+            }
+          }
+        } catch (error) {
+          console.log(`Error scanning for ${tool.name} at ${searchPath}:`, error.message);
+        }
+      }
+    }
+    
+    // Scan for project directories
+    for (const projectPath of projectScanPaths) {
+      try {
+        if (fs.existsSync(projectPath)) {
+          const stats = fs.statSync(projectPath);
+          if (stats.isDirectory()) {
+            const projects = fs.readdirSync(projectPath);
+            const projectCount = projects.filter(item => {
+              const itemPath = path.join(projectPath, item);
+              try {
+                return fs.statSync(itemPath).isDirectory();
+              } catch {
+                return false;
+              }
+            }).length;
+            
+            if (projectCount > 0) {
+              scanResults.projectDirectories.push({
+                path: projectPath,
+                projectCount: projectCount,
+                size: getDirectorySize(projectPath),
+                lastModified: stats.mtime
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.log(`Error scanning project directory ${projectPath}:`, error.message);
+      }
+    }
+    
+    // Scan for configuration files that should be migrated
+    const configScanPaths = [
+      { name: 'PowerShell Profile', path: path.join(os.homedir(), 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1') },
+      { name: 'Git Config', path: path.join(os.homedir(), '.gitconfig') },
+      { name: 'Git Credentials', path: path.join(os.homedir(), '.git-credentials') },
+      { name: 'SSH Config', path: path.join(os.homedir(), '.ssh', 'config') },
+      { name: 'SSH Keys', path: path.join(os.homedir(), '.ssh') },
+      { name: 'NPM Config', path: path.join(os.homedir(), '.npmrc') },
+      { name: 'VS Code Settings', path: path.join(os.homedir(), 'AppData', 'Roaming', 'Code', 'User', 'settings.json') },
+      { name: 'VS Code Keybindings', path: path.join(os.homedir(), 'AppData', 'Roaming', 'Code', 'User', 'keybindings.json') },
+      { name: 'Windows Terminal Settings', path: path.join(os.homedir(), 'AppData', 'Local', 'Packages', 'Microsoft.WindowsTerminal_8wekyb3d8bbwe', 'LocalState', 'settings.json') },
+      { name: 'Environment Variables', path: path.join(os.homedir(), '.env') },
+      { name: 'Bash Profile', path: path.join(os.homedir(), '.bash_profile') },
+      { name: 'Bashrc', path: path.join(os.homedir(), '.bashrc') }
+    ];
+    
+    for (const config of configScanPaths) {
+      try {
+        if (fs.existsSync(config.path)) {
+          const stats = fs.statSync(config.path);
+          scanResults.configurationFiles.push({
+            name: config.name,
+            path: config.path,
+            size: stats.size,
+            lastModified: stats.mtime,
+            isDirectory: stats.isDirectory()
+          });
+          scanResults.totalFilesFound++;
+        }
+      } catch (error) {
+        console.log(`Error scanning config file ${config.path}:`, error.message);
+      }
+    }
+    
+    return {
+      success: true,
+      scanResults: scanResults
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+});
+
+ipcMain.handle('migrate-projects-and-tools', async (event, migrationConfig) => {
+  try {
+    const { 
+      targetDirectory, 
+      selectedTools = [], 
+      selectedProjects = [], 
+      selectedConfigs = [],
+      createBackup = true,
+      mergeExisting = true 
+    } = migrationConfig;
+    
+    const migrationResults = {
+      success: true,
+      migratedTools: [],
+      migratedProjects: [],
+      migratedConfigs: [],
+      errors: [],
+      backupLocation: null,
+      totalFilesMigrated: 0
+    };
+    
+    // Create backup directory if requested
+    let backupDir = null;
+    if (createBackup) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      backupDir = path.join(targetDirectory, 'migration-backup', timestamp);
+      await createDirectoryIfNotExists(backupDir);
+      migrationResults.backupLocation = backupDir;
+    }
+    
+    // Create target structure
+    const targetStructure = {
+      projects: path.join(targetDirectory, 'Projects'),
+      tools: path.join(targetDirectory, 'Tools'),
+      configs: path.join(targetDirectory, 'Configs'),
+      scripts: path.join(targetDirectory, 'Scripts'),
+      docs: path.join(targetDirectory, 'Documentation')
+    };
+    
+    // Create directory structure
+    for (const [key, dirPath] of Object.entries(targetStructure)) {
+      await createDirectoryIfNotExists(dirPath);
+      event.sender.send('migration-progress', `Created directory: ${dirPath}`);
+    }
+    
+    // Migrate tools
+    for (const tool of selectedTools) {
+      try {
+        event.sender.send('migration-progress', `Migrating tool: ${tool.name}`);
+        
+        const toolTargetPath = path.join(targetStructure.tools, tool.type, path.basename(tool.path));
+        
+        if (createBackup && fs.existsSync(tool.path)) {
+          const backupPath = path.join(backupDir, 'tools', tool.type, path.basename(tool.path));
+          await copyDirectory(tool.path, backupPath);
+        }
+        
+        if (mergeExisting || !fs.existsSync(toolTargetPath)) {
+          await copyDirectory(tool.path, toolTargetPath);
+          migrationResults.migratedTools.push({
+            name: tool.name,
+            originalPath: tool.path,
+            newPath: toolTargetPath
+          });
+          migrationResults.totalFilesMigrated++;
+        }
+        
+      } catch (error) {
+        migrationResults.errors.push(`Error migrating tool ${tool.name}: ${error.message}`);
+      }
+    }
+    
+    // Migrate project directories
+    for (const project of selectedProjects) {
+      try {
+        event.sender.send('migration-progress', `Migrating projects from: ${project.path}`);
+        
+        const projectTargetPath = path.join(targetStructure.projects, path.basename(project.path));
+        
+        if (createBackup && fs.existsSync(project.path)) {
+          const backupPath = path.join(backupDir, 'projects', path.basename(project.path));
+          await copyDirectory(project.path, backupPath);
+        }
+        
+        if (mergeExisting || !fs.existsSync(projectTargetPath)) {
+          await copyDirectory(project.path, projectTargetPath);
+          migrationResults.migratedProjects.push({
+            originalPath: project.path,
+            newPath: projectTargetPath,
+            projectCount: project.projectCount
+          });
+          migrationResults.totalFilesMigrated += project.projectCount;
+        }
+        
+      } catch (error) {
+        migrationResults.errors.push(`Error migrating projects from ${project.path}: ${error.message}`);
+      }
+    }
+    
+    // Migrate configuration files
+    for (const config of selectedConfigs) {
+      try {
+        event.sender.send('migration-progress', `Migrating config: ${config.name}`);
+        
+        const configTargetPath = path.join(targetStructure.configs, path.basename(config.path));
+        
+        if (createBackup && fs.existsSync(config.path)) {
+          const backupPath = path.join(backupDir, 'configs', path.basename(config.path));
+          if (config.isDirectory) {
+            await copyDirectory(config.path, backupPath);
+          } else {
+            await createDirectoryIfNotExists(path.dirname(backupPath));
+            fs.copyFileSync(config.path, backupPath);
+          }
+        }
+        
+        if (mergeExisting || !fs.existsSync(configTargetPath)) {
+          if (config.isDirectory) {
+            await copyDirectory(config.path, configTargetPath);
+          } else {
+            fs.copyFileSync(config.path, configTargetPath);
+          }
+          
+          migrationResults.migratedConfigs.push({
+            name: config.name,
+            originalPath: config.path,
+            newPath: configTargetPath
+          });
+          migrationResults.totalFilesMigrated++;
+        }
+        
+      } catch (error) {
+        migrationResults.errors.push(`Error migrating config ${config.name}: ${error.message}`);
+      }
+    }
+    
+    // Create migration summary
+    const summaryPath = path.join(targetDirectory, 'migration-summary.json');
+    const migrationSummary = {
+      timestamp: new Date().toISOString(),
+      targetDirectory: targetDirectory,
+      migrationResults: migrationResults,
+      migrationConfig: migrationConfig
+    };
+    
+    fs.writeFileSync(summaryPath, JSON.stringify(migrationSummary, null, 2));
+    event.sender.send('migration-progress', `Migration summary saved to: ${summaryPath}`);
+    
+    // Update CONFIG_PATHS to point to new locations
+    CONFIG_PATHS.projectsDir = targetStructure.projects;
+    
+    return migrationResults;
+    
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+      errors: [error.message]
+    };
+  }
+});
+
+// Helper function to get directory size
+function getDirectorySize(directoryPath) {
+  try {
+    let totalSize = 0;
+    const files = fs.readdirSync(directoryPath);
+    
+    for (const file of files) {
+      const filePath = path.join(directoryPath, file);
+      const stats = fs.statSync(filePath);
+      
+      if (stats.isDirectory()) {
+        totalSize += getDirectorySize(filePath);
+      } else {
+        totalSize += stats.size;
+      }
+    }
+    
+    return totalSize;
+  } catch (error) {
+    return 0;
+  }
+}
+
+// Helper function to copy directory recursively
+async function copyDirectory(src, dest) {
+  try {
+    await createDirectoryIfNotExists(dest);
+    const items = fs.readdirSync(src);
+    
+    for (const item of items) {
+      const srcPath = path.join(src, item);
+      const destPath = path.join(dest, item);
+      const stats = fs.statSync(srcPath);
+      
+      if (stats.isDirectory()) {
+        await copyDirectory(srcPath, destPath);
+      } else {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
+  } catch (error) {
+    throw new Error(`Failed to copy directory from ${src} to ${dest}: ${error.message}`);
+  }
 } 

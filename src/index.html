@@ -38,6 +38,76 @@
             </div>
         </div>
 
+        <!-- Project Migration -->
+        <div id="migration-section" class="section">
+            <h3>📦 Project & Tool Migration</h3>
+            <p>Migrate your existing projects, tools, and configurations to a new centralized location. This helps organize your development environment in one place.</p>
+            
+            <div class="migration-controls">
+                <div class="form-group">
+                    <label for="migration-target-dir">Target Directory:</label>
+                    <div class="input-group">
+                        <input type="text" id="migration-target-dir" placeholder="Select target directory..." readonly>
+                        <button id="select-target-dir-btn" class="btn btn-secondary">Browse</button>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="scan-existing-btn" class="btn btn-primary">Scan for Tools & Projects</button>
+                    <button id="start-migration-btn" class="btn btn-success" disabled>Start Migration</button>
+                </div>
+                
+                <div class="migration-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="create-backup" checked>
+                        Create backup before migration
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="merge-existing" checked>
+                        Merge with existing files
+                    </label>
+                </div>
+            </div>
+            
+            <div id="scan-results" class="scan-results" style="display: none;">
+                <h4>Scan Results</h4>
+                
+                <div class="scan-category">
+                    <h5>🛠️ Development Tools Found</h5>
+                    <div id="tools-list" class="items-list">
+                        <!-- Tools will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="scan-category">
+                    <h5>📁 Project Directories Found</h5>
+                    <div id="projects-list" class="items-list">
+                        <!-- Projects will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="scan-category">
+                    <h5>⚙️ Configuration Files Found</h5>
+                    <div id="configs-list" class="items-list">
+                        <!-- Configs will be populated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div id="migration-progress" class="migration-progress" style="display: none;">
+                <h4>Migration Progress</h4>
+                <div class="progress-bar">
+                    <div id="migration-progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="migration-status" class="migration-status"></div>
+                <div id="migration-log" class="console"></div>
+            </div>
+            
+            <div id="migration-results" class="migration-results" style="display: none;">
+                <!-- Migration results will be populated here -->
+            </div>
+        </div>
+
         <!-- Tool Status -->
         <div id="tool-status" class="section">
             <h3>📊 Current Tool Status</h3>

@@ -596,4 +596,251 @@ header p {
     .verification-section {
         padding: 10px;
     }
+}
+
+/* Migration Styles */
+.migration-controls {
+    margin-bottom: 20px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.input-group input[type="text"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.migration-options {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+.scan-results {
+    margin-top: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px;
+    background-color: #fafafa;
+}
+
+.scan-category {
+    margin-bottom: 25px;
+}
+
+.scan-category h5 {
+    margin-bottom: 10px;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+}
+
+.items-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: white;
+}
+
+.scan-result-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.scan-result-item:hover {
+    background-color: #f0f8ff;
+}
+
+.scan-result-item:last-child {
+    border-bottom: none;
+}
+
+.scan-item-label {
+    flex: 1;
+    cursor: pointer;
+}
+
+.scan-item-label strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #333;
+    font-size: 14px;
+}
+
+.item-path {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+.item-details {
+    font-size: 11px;
+    color: #888;
+}
+
+.no-items {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+}
+
+.migration-progress {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #007bff;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+}
+
+.migration-progress h4 {
+    margin-bottom: 15px;
+    color: #007bff;
+}
+
+.migration-status {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+.migration-log {
+    margin-top: 15px;
+    height: 200px;
+    overflow-y: auto;
+    background-color: #1e1e1e;
+    color: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.migration-log .log-entry {
+    margin-bottom: 5px;
+    white-space: pre-wrap;
+}
+
+.migration-results {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #28a745;
+    border-radius: 6px;
+    background-color: #f8fff9;
+}
+
+.migration-results h4 {
+    margin-bottom: 20px;
+    color: #28a745;
+}
+
+.migration-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.summary-card {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+}
+
+.summary-card h5 {
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 16px;
+}
+
+.summary-card p {
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.migrated-item, .error-item {
+    font-size: 12px;
+    margin-bottom: 5px;
+    padding: 5px;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.error-card {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.error-card h5 {
+    color: #dc3545;
+}
+
+.error-item {
+    background-color: #ffe6e6;
+    color: #dc3545;
+}
+
+.post-migration-actions {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+}
+
+.post-migration-actions h5 {
+    margin-bottom: 10px;
+    color: #856404;
+}
+
+.post-migration-actions ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.post-migration-actions li {
+    margin-bottom: 8px;
+    color: #856404;
+}
+
+/* Responsive adjustments for migration interface */
+@media (max-width: 768px) {
+    .migration-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .migration-options {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .input-group input[type="text"] {
+        margin-bottom: 10px;
+    }
 } 

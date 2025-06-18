@@ -54,6 +54,23 @@ class DevSetupApp {
         this.configurePathsBtn = document.getElementById('configure-paths-btn');
         this.cleanupDuplicatesBtn = document.getElementById('cleanup-duplicates-btn');
         this.verificationResults = document.getElementById('verification-results');
+        
+        // Migration elements
+        this.migrationTargetDir = document.getElementById('migration-target-dir');
+        this.selectTargetDirBtn = document.getElementById('select-target-dir-btn');
+        this.scanExistingBtn = document.getElementById('scan-existing-btn');
+        this.startMigrationBtn = document.getElementById('start-migration-btn');
+        this.createBackupCheckbox = document.getElementById('create-backup');
+        this.mergeExistingCheckbox = document.getElementById('merge-existing');
+        this.scanResults = document.getElementById('scan-results');
+        this.toolsList = document.getElementById('tools-list');
+        this.projectsList = document.getElementById('projects-list');
+        this.configsList = document.getElementById('configs-list');
+        this.migrationProgress = document.getElementById('migration-progress');
+        this.migrationProgressFill = document.getElementById('migration-progress-fill');
+        this.migrationStatus = document.getElementById('migration-status');
+        this.migrationLog = document.getElementById('migration-log');
+        this.migrationResults = document.getElementById('migration-results');
     }
 
     bindEvents() {
@@ -96,9 +113,23 @@ class DevSetupApp {
             this.cleanupDuplicatesBtn.addEventListener('click', () => this.cleanupDuplicateFiles());
         }
         
+        // Migration event listeners
+        if (this.selectTargetDirBtn) {
+            this.selectTargetDirBtn.addEventListener('click', () => this.selectTargetDirectory());
+        }
+        
+        if (this.scanExistingBtn) {
+            this.scanExistingBtn.addEventListener('click', () => this.scanForExistingToolsAndProjects());
+        }
+        
+        if (this.startMigrationBtn) {
+            this.startMigrationBtn.addEventListener('click', () => this.startMigration());
+        }
+        
         // IPC listeners
         ipcRenderer.on('setup-output', (event, data) => this.handleSetupOutput(data));
         ipcRenderer.on('setup-error', (event, data) => this.handleSetupError(data));
+        ipcRenderer.on('migration-progress', (event, data) => this.handleMigrationProgress(data));
     }
 
     async checkInitialStatus() {
@@ -657,15 +688,324 @@ class DevSetupApp {
     }
 
     openProjectsFolder() {
-        const projectsPath = path.join(require('os').homedir(), 'Projects');
-        spawn('explorer', [projectsPath], {
-            detached: true,
-            stdio: 'ignore'
+        const { spawn } = require('child_process');
+        const os = require('os');
+        const path = require('path');
+        
+        const projectsPath = path.join(os.homedir(), 'Projects');
+        spawn('explorer', [projectsPath], { shell: true });
+    }
+
+    // Migration Methods
+    async selectTargetDirectory() {
+        try {
+            this.selectTargetDirBtn.disabled = true;
+            this.selectTargetDirBtn.textContent = 'Selecting...';
+            
+            const result = await ipcRenderer.invoke('select-projects-directory');
+            
+            if (result.success) {
+                this.migrationTargetDir.value = result.path;
+                this.logToConsole(`Selected target directory: ${result.path}`, 'success');
+                
+                // Enable scan button if directory is selected
+                if (this.scanExistingBtn) {
+                    this.scanExistingBtn.disabled = false;
+                }
+            } else {
+                this.logToConsole(`Directory selection cancelled: ${result.message}`, 'info');
+            }
+        } catch (error) {
+            this.logToConsole(`Error selecting directory: ${error}`, 'error');
+        } finally {
+            this.selectTargetDirBtn.disabled = false;
+            this.selectTargetDirBtn.textContent = 'Browse';
+        }
+    }
+    
+    async scanForExistingToolsAndProjects() {
+        try {
+            this.scanExistingBtn.disabled = true;
+            this.scanExistingBtn.textContent = 'Scanning...';
+            
+            this.logToConsole('Starting comprehensive scan for tools, projects, and configurations...', 'info');
+            
+            const result = await ipcRenderer.invoke('scan-for-existing-tools');
+            
+            if (result.success) {
+                this.displayScanResults(result.scanResults);
+                this.scanResults.style.display = 'block';
+                
+                // Enable migration button if items found
+                const totalItems = result.scanResults.tools.length + 
+                                 result.scanResults.projectDirectories.length + 
+                                 result.scanResults.configurationFiles.length;
+                
+                if (totalItems > 0 && this.migrationTargetDir.value) {
+                    this.startMigrationBtn.disabled = false;
+                }
+                
+                this.logToConsole(`Scan completed! Found ${totalItems} items to migrate.`, 'success');
+            } else {
+                this.logToConsole(`Scan failed: ${result.message}`, 'error');
+            }
+        } catch (error) {
+            this.logToConsole(`Error during scan: ${error}`, 'error');
+        } finally {
+            this.scanExistingBtn.disabled = false;
+            this.scanExistingBtn.textContent = 'Scan for Tools & Projects';
+        }
+    }
+    
+    displayScanResults(scanResults) {
+        // Display tools
+        this.toolsList.innerHTML = '';
+        scanResults.tools.forEach(tool => {
+            const toolElement = this.createScanResultItem(tool, 'tool');
+            this.toolsList.appendChild(toolElement);
         });
+        
+        if (scanResults.tools.length === 0) {
+            this.toolsList.innerHTML = '<p class="no-items">No development tools found in common locations.</p>';
+        }
+        
+        // Display project directories
+        this.projectsList.innerHTML = '';
+        scanResults.projectDirectories.forEach(project => {
+            const projectElement = this.createScanResultItem(project, 'project');
+            this.projectsList.appendChild(projectElement);
+        });
+        
+        if (scanResults.projectDirectories.length === 0) {
+            this.projectsList.innerHTML = '<p class="no-items">No project directories found in common locations.</p>';
+        }
+        
+        // Display configuration files
+        this.configsList.innerHTML = '';
+        scanResults.configurationFiles.forEach(config => {
+            const configElement = this.createScanResultItem(config, 'config');
+            this.configsList.appendChild(configElement);
+        });
+        
+        if (scanResults.configurationFiles.length === 0) {
+            this.configsList.innerHTML = '<p class="no-items">No configuration files found.</p>';
+        }
+    }
+    
+    createScanResultItem(item, type) {
+        const div = document.createElement('div');
+        div.className = 'scan-result-item';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        checkbox.dataset.type = type;
+        checkbox.dataset.itemData = JSON.stringify(item);
+        
+        const label = document.createElement('label');
+        label.className = 'scan-item-label';
+        
+        const title = document.createElement('strong');
+        title.textContent = item.name || `${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        
+        const path = document.createElement('div');
+        path.className = 'item-path';
+        path.textContent = item.path;
+        
+        const details = document.createElement('div');
+        details.className = 'item-details';
+        
+        if (type === 'tool') {
+            details.textContent = `Type: ${item.type} | Size: ${this.formatFileSize(item.size)}`;
+        } else if (type === 'project') {
+            details.textContent = `Projects: ${item.projectCount} | Size: ${this.formatFileSize(item.size)}`;
+        } else if (type === 'config') {
+            details.textContent = `Size: ${this.formatFileSize(item.size)} | Modified: ${new Date(item.lastModified).toLocaleDateString()}`;
+        }
+        
+        label.appendChild(title);
+        label.appendChild(path);
+        label.appendChild(details);
+        
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        
+        return div;
+    }
+    
+    async startMigration() {
+        try {
+            // Collect selected items
+            const selectedTools = [];
+            const selectedProjects = [];
+            const selectedConfigs = [];
+            
+            const checkboxes = this.scanResults.querySelectorAll('input[type="checkbox"]:checked');
+            
+            checkboxes.forEach(checkbox => {
+                const itemData = JSON.parse(checkbox.dataset.itemData);
+                const type = checkbox.dataset.type;
+                
+                if (type === 'tool') {
+                    selectedTools.push(itemData);
+                } else if (type === 'project') {
+                    selectedProjects.push(itemData);
+                } else if (type === 'config') {
+                    selectedConfigs.push(itemData);
+                }
+            });
+            
+            const totalItems = selectedTools.length + selectedProjects.length + selectedConfigs.length;
+            
+            if (totalItems === 0) {
+                this.logToConsole('No items selected for migration.', 'warning');
+                return;
+            }
+            
+            if (!this.migrationTargetDir.value) {
+                this.logToConsole('Please select a target directory first.', 'error');
+                return;
+            }
+            
+            // Prepare migration config
+            const migrationConfig = {
+                targetDirectory: this.migrationTargetDir.value,
+                selectedTools: selectedTools,
+                selectedProjects: selectedProjects,
+                selectedConfigs: selectedConfigs,
+                createBackup: this.createBackupCheckbox.checked,
+                mergeExisting: this.mergeExistingCheckbox.checked
+            };
+            
+            // Start migration
+            this.startMigrationBtn.disabled = true;
+            this.startMigrationBtn.textContent = 'Migrating...';
+            this.migrationProgress.style.display = 'block';
+            this.migrationResults.style.display = 'none';
+            
+            this.logToConsole(`Starting migration of ${totalItems} items to ${this.migrationTargetDir.value}`, 'info');
+            this.updateMigrationProgress(0, 'Preparing migration...');
+            
+            const result = await ipcRenderer.invoke('migrate-projects-and-tools', migrationConfig);
+            
+            if (result.success) {
+                this.updateMigrationProgress(100, 'Migration completed successfully!');
+                this.displayMigrationResults(result);
+                this.logToConsole(`Migration completed! ${result.totalFilesMigrated} items migrated.`, 'success');
+                
+                if (result.backupLocation) {
+                    this.logToConsole(`Backup created at: ${result.backupLocation}`, 'info');
+                }
+                
+                if (result.errors.length > 0) {
+                    this.logToConsole(`${result.errors.length} errors occurred during migration:`, 'warning');
+                    result.errors.forEach(error => {
+                        this.logToConsole(`  • ${error}`, 'warning');
+                    });
+                }
+            } else {
+                this.updateMigrationProgress(0, 'Migration failed');
+                this.logToConsole(`Migration failed: ${result.message}`, 'error');
+                
+                if (result.errors && result.errors.length > 0) {
+                    result.errors.forEach(error => {
+                        this.logToConsole(`  • ${error}`, 'error');
+                    });
+                }
+            }
+            
+        } catch (error) {
+            this.updateMigrationProgress(0, 'Migration failed');
+            this.logToConsole(`Migration error: ${error}`, 'error');
+        } finally {
+            this.startMigrationBtn.disabled = false;
+            this.startMigrationBtn.textContent = 'Start Migration';
+        }
+    }
+    
+    handleMigrationProgress(data) {
+        this.logToMigrationConsole(data);
+    }
+    
+    updateMigrationProgress(percent, status) {
+        if (this.migrationProgressFill) {
+            this.migrationProgressFill.style.width = `${percent}%`;
+        }
+        if (this.migrationStatus) {
+            this.migrationStatus.textContent = status;
+        }
+    }
+    
+    logToMigrationConsole(message) {
+        if (this.migrationLog) {
+            this.migrationLog.innerHTML += `<div class="log-entry">${new Date().toLocaleTimeString()} - ${message}</div>`;
+            this.migrationLog.scrollTop = this.migrationLog.scrollHeight;
+        }
+    }
+    
+    displayMigrationResults(results) {
+        this.migrationResults.style.display = 'block';
+        
+        const html = `
+            <h4>Migration Results</h4>
+            <div class="migration-summary">
+                <div class="summary-card">
+                    <h5>📁 Projects Migrated</h5>
+                    <p>${results.migratedProjects.length} project directories</p>
+                    ${results.migratedProjects.map(p => `<div class="migrated-item">• ${p.originalPath} → ${p.newPath}</div>`).join('')}
+                </div>
+                
+                <div class="summary-card">
+                    <h5>🛠️ Tools Migrated</h5>
+                    <p>${results.migratedTools.length} development tools</p>
+                    ${results.migratedTools.map(t => `<div class="migrated-item">• ${t.name}: ${t.originalPath} → ${t.newPath}</div>`).join('')}
+                </div>
+                
+                <div class="summary-card">
+                    <h5>⚙️ Configurations Migrated</h5>
+                    <p>${results.migratedConfigs.length} configuration files</p>
+                    ${results.migratedConfigs.map(c => `<div class="migrated-item">• ${c.name}: ${c.originalPath} → ${c.newPath}</div>`).join('')}
+                </div>
+                
+                ${results.backupLocation ? `
+                <div class="summary-card">
+                    <h5>💾 Backup Created</h5>
+                    <p>Backup location: ${results.backupLocation}</p>
+                </div>
+                ` : ''}
+                
+                ${results.errors.length > 0 ? `
+                <div class="summary-card error-card">
+                    <h5>⚠️ Errors (${results.errors.length})</h5>
+                    ${results.errors.map(e => `<div class="error-item">• ${e}</div>`).join('')}
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="post-migration-actions">
+                <h5>Next Steps</h5>
+                <ul>
+                    <li>Update your IDE and terminal paths to point to the new locations</li>
+                    <li>Test that all tools are accessible from the new directory structure</li>
+                    <li>Consider updating environment variables to point to new tool locations</li>
+                    <li>Verify all projects open correctly from their new locations</li>
+                </ul>
+            </div>
+        `;
+        
+        this.migrationResults.innerHTML = html;
+    }
+    
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 }
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new DevSetupApp();
+    window.devSetupApp = new DevSetupApp();
 }); 
