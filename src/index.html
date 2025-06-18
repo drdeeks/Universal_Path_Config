@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Development Environment Setup</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Universal Development Environment Setup</h1>
+            <p>Automatically configure Git, WSL, VS Code, Docker, Node.js, and PowerShell for seamless cross-platform development</p>
+        </header>
+
+        <!-- Admin Check -->
+        <div id="admin-check" class="section">
+            <div class="admin-warning">
+                <h3>🔐 Administrator Privileges Status</h3>
+                <p>This application needs to run as Administrator to install and configure development tools. Check your current privilege level below.</p>
+                <button id="check-admin-btn" class="btn btn-primary">Check Admin Status</button>
+                <div id="admin-status" class="status-indicator"></div>
+            </div>
+        </div>
+
+        <!-- Environment Verification -->
+        <div id="verification-section" class="section">
+            <h3>🔍 Environment Verification</h3>
+            <p>Verify and fix the structure of your development environment. This ensures all configurations are correctly placed and apps can communicate seamlessly.</p>
+            <div class="button-group">
+                <button id="verify-environment-btn" class="btn btn-primary">Verify Environment</button>
+                <button id="configure-paths-btn" class="btn btn-primary">Configure Terminal Paths</button>
+                <button id="cleanup-duplicates-btn" class="btn btn-warning">Cleanup Duplicates</button>
+                <button id="refresh-status-btn" class="btn btn-secondary">Refresh Tool Status</button>
+            </div>
+            <div id="verification-results" class="verification-results">
+                <!-- Verification results will be populated here -->
+            </div>
+        </div>
+
+        <!-- Tool Status -->
+        <div id="tool-status" class="section">
+            <h3>📊 Current Tool Status</h3>
+            <div id="status-grid" class="tool-grid">
+                <!-- Tool status will be populated here -->
+            </div>
+        </div>
+
+        <!-- Configuration Options -->
+        <div id="config-section" class="section">
+            <h3>⚙️ Configuration Options</h3>
+            <form id="setup-form">
+                <div class="form-group">
+                    <label for="git-username">Git Username:</label>
+                    <input type="text" id="git-username" placeholder="Enter your Git username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="git-email">Git Email:</label>
+                    <input type="email" id="git-email" placeholder="Enter your Git email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="skip-installation">
+                        Skip Installation (Configure only existing tools)
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="configure-only">
+                        Configuration Only (No installations)
+                    </label>
+                </div>
+            </form>
+        </div>
+
+        <!-- Setup Controls -->
+        <div id="setup-controls" class="section">
+            <h3>Setup Process</h3>
+            <div class="button-group">
+                <button id="start-setup-btn" class="btn btn-success" disabled>Start Setup</button>
+                <button id="stop-setup-btn" class="btn btn-danger" disabled>Stop Setup</button>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="progress-section" class="section">
+            <h3>📈 Progress</h3>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="progress-text" class="progress-text">Ready to start...</div>
+        </div>
+
+        <!-- Output Console -->
+        <div id="console-section" class="section">
+            <h3>💻 Console Output</h3>
+            <div class="console-controls">
+                <button id="clear-console-btn" class="btn btn-secondary">Clear Console</button>
+                <button id="save-log-btn" class="btn btn-secondary">Save Log</button>
+            </div>
+            <div id="console-output" class="console"></div>
+        </div>
+
+        <!-- Post-Installation -->
+        <div id="post-install" class="section" style="display: none;">
+            <h3>Setup Complete!</h3>
+            <div class="success-message">
+                <p>Your development environment has been successfully configured and verified!</p>
+                <h4>Next Steps:</h4>
+                <ul>
+                    <li>Restart your terminal to apply all PATH changes</li>
+                    <li>Run <code>dev-status</code> to verify installation</li>
+                    <li>Test cross-platform access with <code>cdwsl</code></li>
+                    <li>Try <code>new-project ProjectName</code> to create a new project</li>
+                    <li>Use <code>sync-env</code> to synchronize configurations</li>
+                </ul>
+                <h4>Enhanced Features Available:</h4>
+                <ul>
+                    <li><strong>Cross-platform navigation:</strong> <code>cdw</code>, <code>cdwsl</code>, <code>cdprojects</code></li>
+                    <li><strong>Environment management:</strong> <code>dev-status</code>, <code>dev-update</code></li>
+                    <li><strong>Project creation:</strong> <code>new-project [name]</code></li>
+                    <li><strong>Environment sync:</strong> <code>sync-env</code></li>
+                </ul>
+                <div class="button-group">
+                    <button id="restart-terminal-btn" class="btn btn-primary">Open New Terminal</button>
+                    <button id="open-projects-btn" class="btn btn-secondary">Open Projects Folder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html> 

@@ -1,0 +1,158 @@
+{
+  "folders": [
+    {
+      "name": "Projects (Windows)",
+      "path": "${env:USERPROFILE}\\Projects"
+    },
+    {
+      "name": "WSL Home",
+      "path": "\\\\wsl$\\Ubuntu\\home\\${env:USERNAME}"
+    },
+    {
+      "name": "WSL Projects",
+      "path": "\\\\wsl$\\Ubuntu\\home\\${env:USERNAME}\\projects"
+    }
+  ],
+  "settings": {
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.cwd": "${workspaceFolder:Projects (Windows)}",
+    "terminal.integrated.profiles.windows": {
+      "PowerShell (Dev)": {
+        "source": "PowerShell",
+        "icon": "terminal-powershell",
+        "args": ["-NoLogo", "-ExecutionPolicy", "Bypass"],
+        "overrideName": true
+      },
+      "WSL Ubuntu": {
+        "path": "wsl.exe",
+        "icon": "terminal-ubuntu",
+        "args": ["~"],
+        "overrideName": true
+      },
+      "Git Bash": {
+        "source": "Git Bash",
+        "icon": "terminal-bash",
+        "overrideName": true
+      },
+      "Command Prompt": {
+        "path": "cmd.exe",
+        "icon": "terminal-cmd",
+        "args": ["/k", "cd", "/d", "${env:USERPROFILE}\\Projects"]
+      }
+    },
+    "files.defaultLanguage": "markdown",
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.git": false,
+      "**/.DS_Store": true,
+      "**/Thumbs.db": true,
+      "**/*.log": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/bower_components": true,
+      "**/.git": true
+    },
+    "git.defaultCloneDirectory": "${workspaceFolder:Projects (Windows)}",
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    "git.showPushSuccessNotification": true,
+    "explorer.confirmDelete": false,
+    "explorer.confirmDragAndDrop": false,
+    "explorer.openEditors.visible": 10,
+    "workbench.startupEditor": "newUntitledFile",
+    "workbench.panel.defaultLocation": "right",
+    "workbench.colorTheme": "Default Dark+",
+    "editor.fontSize": 14,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.wordWrap": "on",
+    "editor.minimap.enabled": true,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    },
+    "emmet.includeLanguages": {
+      "javascript": "javascriptreact",
+      "typescript": "typescriptreact"
+    },
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "python.defaultInterpreterPath": "python",
+    "python.terminal.activateEnvironment": true,
+    "remote.WSL.fileWatcher.polling": true,
+    "remote.WSL.server.connectThroughProxy": true,
+    "extensions.autoUpdate": true,
+    "extensions.ignoreRecommendations": false
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode-remote.remote-wsl",
+      "ms-vscode.powershell",
+      "ms-python.python",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-eslint",
+      "eamodio.gitlens",
+      "ms-azuretools.vscode-docker",
+      "bradlc.vscode-tailwindcss",
+      "ms-vscode.vscode-json",
+      "yzhang.markdown-all-in-one",
+      "formulahendry.auto-rename-tag",
+      "christian-kohler.path-intellisense",
+      "ms-vscode.vscode-typescript-next"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Open PowerShell in Projects",
+        "type": "shell",
+        "command": "powershell",
+        "args": ["-Command", "Set-Location '${env:USERPROFILE}\\Projects'; powershell"],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "new"
+        },
+        "options": {
+          "cwd": "${env:USERPROFILE}\\Projects"
+        }
+      },
+      {
+        "label": "Open WSL in Projects",
+        "type": "shell",
+        "command": "wsl",
+        "args": ["~"],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Git Status All Projects",
+        "type": "shell",
+        "command": "powershell",
+        "args": [
+          "-Command",
+          "Get-ChildItem -Path '${env:USERPROFILE}\\Projects' -Directory | ForEach-Object { if (Test-Path (Join-Path $_.FullName '.git')) { Write-Host \"$($_.Name):\" -ForegroundColor Green; Set-Location $_.FullName; git status --porcelain; Write-Host '' } }"
+        ],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "new"
+        }
+      }
+    ]
+  }
+} 

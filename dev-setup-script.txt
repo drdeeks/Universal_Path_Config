@@ -1,0 +1,524 @@
+#Requires -RunAsAdministrator
+
+<#
+.SYNOPSIS
+    Universal Development Environment Setup Script
+.DESCRIPTION
+    Automatically configures Git, WSL, VS Code, Docker, Node.js, and PowerShell for seamless cross-platform development
+.AUTHOR
+    Auto-generated for unified development environment
+#>
+
+param(
+    [switch]$SkipInstallation,
+    [switch]$ConfigureOnly,
+    [string]$GitUserName = "",
+    [string]$GitUserEmail = ""
+)
+
+# Colors for output
+$Red = "Red"
+$Green = "Green"
+$Yellow = "Yellow"
+$Blue = "Cyan"
+
+function Write-Status {
+    param([string]$Message, [string]$Color = "White")
+    Write-Host "▶ $Message" -ForegroundColor $Color
+}
+
+function Write-Success {
+    param([string]$Message)
+    Write-Host "✓ $Message" -ForegroundColor $Green
+}
+
+function Write-Warning {
+    param([string]$Message)
+    Write-Host "⚠ $Message" -ForegroundColor $Yellow
+}
+
+function Write-Error {
+    param([string]$Message)
+    Write-Host "✗ $Message" -ForegroundColor $Red
+}
+
+function Test-Administrator {
+    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Install-Prerequisites {
+    if ($SkipInstallation -or $ConfigureOnly) {
+        Write-Warning "Skipping installation phase..."
+        return
+    }
+
+    Write-Status "Installing prerequisites..." $Blue
+    
+    # Check for Chocolatey
+    if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
+        Write-Status "Installing Chocolatey..."
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        Write-Success "Chocolatey installed"
+    } else {
+        Write-Success "Chocolatey already installed"
+    }
+
+    # Install tools via Chocolatey
+    $tools = @("git", "nodejs", "python", "vscode", "docker-desktop", "postman", "firefox")
+    foreach ($tool in $tools) {
+        Write-Status "Installing $tool..."
+        try {
+            choco install $tool -y --no-progress
+            Write-Success "$tool installed"
+        } catch {
+            Write-Warning "Failed to install $tool via Chocolatey, trying alternative..."
+            switch ($tool) {
+                "git" { winget install --id Git.Git -e --source winget --silent }
+                "nodejs" { winget install --id OpenJS.NodeJS -e --source winget --silent }
+                "python" { winget install --id Python.Python.3.12 -e --source winget --silent }
+                "vscode" { winget install --id Microsoft.VisualStudioCode -e --source winget --silent }
+                "docker-desktop" { winget install --id Docker.DockerDesktop -e --source winget --silent }
+                "postman" { winget install --id Postman.Postman -e --source winget --silent }
+                "firefox" { winget install --id Mozilla.Firefox -e --source winget --silent }
+            }
+        }
+    }
+
+    # Install WSL if not present
+    Write-Status "Checking WSL installation..."
+    if (!(Get-Command wsl -ErrorAction SilentlyContinue)) {
+        Write-Status "Installing WSL..."
+        wsl --install --no-launch
+        Write-Warning "WSL installed. Please reboot and run this script again."
+        Read-Host "Press Enter to continue after reboot..."
+    }
+
+    # Install Ubuntu if not present
+    $wslDistros = wsl --list --quiet
+    if ($wslDistros -notcontains "Ubuntu") {
+        Write-Status "Installing Ubuntu on WSL..."
+        wsl --install -d Ubuntu --no-launch
+    }
+    
+    Write-Success "Prerequisites installation completed"
+}
+
+function Configure-PowerShell {
+    Write-Status "Configuring PowerShell profile..." $Blue
+    
+    # Create PowerShell profile if it doesn't exist
+    if (!(Test-Path $PROFILE)) {
+        New-Item -Path $PROFILE -Type File -Force | Out-Null
+        Write-Success "PowerShell profile created"
+    }
+
+    # PowerShell profile content
+    $profileContent = @'
+# Universal Development Environment Profile
+# Auto-generated configuration
+
+# WSL Integration
+function Use-WSL { wsl $args }
+Set-Alias -Name bash -Value Use-WSL
+Set-Alias -Name ll -Value "wsl ls -la"
+
+# Environment Variables
+$env:WSLHOME = "\\wsl$\Ubuntu\home\$env:USERNAME"
+$env:EDITOR = "code"
+
+# Git aliases
+function git-wsl { wsl git $args }
+function git-win { & "C:\Program Files\Git\bin\git.exe" $args }
+
+# Node/NPM integration
+$env:PATH += ";$env:APPDATA\npm"
+
+# Docker integration
+function docker-wsl { wsl docker $args }
+
+# Quick navigation
+function cdw { Set-Location "C:\Users\$env:USERNAME" }
+function cdwsl { Set-Location "\\wsl$\Ubuntu\home\$env:USERNAME" }
+function cdprojects { Set-Location "C:\Users\$env:USERNAME\Projects" }
+
+# VS Code integration
+function code-wsl { wsl code $args }
+
+# Development shortcuts
+function dev-status {
+    Write-Host "Development Environment Status:" -ForegroundColor Cyan
+    Write-Host "Git: " -NoNewline; git --version
+    Write-Host "Node: " -NoNewline; node --version
+    Write-Host "NPM: " -NoNewline; npm --version
+    Write-Host "Python: " -NoNewline; 
+    try { python --version } catch { Write-Host "Not installed" }
+    Write-Host "Docker: " -NoNewline; docker --version
+    Write-Host "WSL: " -NoNewline; wsl --status
+}
+
+function dev-update {
+    Write-Host "Updating development tools..." -ForegroundColor Yellow
+    choco upgrade all -y
+    npm update -g
+    wsl sudo apt update && wsl sudo apt upgrade -y
+}
+
+Write-Host "🚀 Development environment loaded!" -ForegroundColor Green
+'@
+
+    Set-Content -Path $PROFILE -Value $profileContent -Encoding UTF8
+    Write-Success "PowerShell profile configured"
+}
+
+function Configure-Git {
+    Write-Status "Configuring Git..." $Blue
+    
+    if (!$GitUserName) {
+        $GitUserName = Read-Host "Enter your Git username"
+    }
+    if (!$GitUserEmail) {
+        $GitUserEmail = Read-Host "Enter your Git email"
+    }
+
+    # Global Git configuration
+    git config --global user.name $GitUserName
+    git config --global user.email $GitUserEmail
+    git config --global core.editor "code --wait"
+    git config --global init.defaultBranch main
+    git config --global core.autocrlf true
+    git config --global credential.helper manager-core
+    git config --global pull.rebase false
+    git config --global push.default simple
+    
+    # Create Projects directory
+    $projectsDir = "$env:USERPROFILE\Projects"
+    if (!(Test-Path $projectsDir)) {
+        New-Item -Path $projectsDir -ItemType Directory -Force | Out-Null
+        Write-Success "Projects directory created at $projectsDir"
+    }
+    
+    Write-Success "Git configured globally"
+}
+
+function Configure-WSL {
+    Write-Status "Configuring WSL..." $Blue
+    
+    # Set Ubuntu as default
+    try {
+        wsl --set-default Ubuntu
+        Write-Success "Ubuntu set as default WSL distribution"
+    } catch {
+        Write-Warning "Could not set Ubuntu as default WSL distribution"
+    }
+
+    # WSL bash profile content
+    $wslProfileContent = @"
+# Universal Development Environment - WSL Configuration
+# Auto-generated configuration
+
+# Windows integration
+export WINDOWS_USER="/mnt/c/Users/`$USER"
+export WINHOME="/mnt/c/Users/`$USER"
+
+# PATH additions for Windows tools
+export PATH="`$PATH:/mnt/c/Program Files/Git/bin"
+export PATH="`$PATH:/mnt/c/Program Files/Microsoft VS Code/bin"
+export PATH="`$PATH:/mnt/c/Program Files/nodejs"
+export PATH="`$PATH:/mnt/c/Program Files/Docker/Docker/resources/bin"
+export PATH="`$PATH:/mnt/c/Users/`$USER/AppData/Local/Programs/Microsoft VS Code/bin"
+
+# Tool aliases
+alias code='/mnt/c/Users/`$USER/AppData/Local/Programs/Microsoft\ VS\ Code/Code.exe'
+alias git-win='/mnt/c/Program\ Files/Git/bin/git.exe'
+alias npm-win='/mnt/c/Program\ Files/nodejs/npm.cmd'
+alias node-win='/mnt/c/Program\ Files/nodejs/node.exe'
+
+# Navigation aliases
+alias cdhome='cd ~'
+alias cdwinhome='cd /mnt/c/Users/`$USER'
+alias cdprojects='cd /mnt/c/Users/`$USER/Projects'
+
+# Default editor
+export EDITOR="code"
+
+# Docker integration
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# Development shortcuts
+alias dev-status='echo "WSL Development Environment Status:" && git --version && node --version && npm --version && python --version && docker --version'
+alias dev-update='sudo apt update && sudo apt upgrade -y'
+
+# Enhanced prompt
+PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+
+echo "🐧 WSL Development environment loaded!"
+"@
+
+    # Write to WSL bash profile
+    $wslProfileContent | wsl tee ~/.bashrc > $null
+    
+    # Install common development tools in WSL
+    Write-Status "Installing development tools in WSL..."
+    wsl sudo apt update
+    wsl sudo apt install -y curl wget unzip zip build-essential python3 python3-pip python3-venv nodejs npm default-jdk maven gradle
+    
+    # Configure Python aliases in WSL
+    wsl bash -c 'echo "alias python=python3" >> ~/.bashrc'
+    wsl bash -c 'echo "alias pip=pip3" >> ~/.bashrc'
+    
+    # Install additional Python packages in WSL
+    wsl pip3 install --user virtualenv requests flask django fastapi jupyter notebook pandas numpy matplotlib seaborn
+    
+    # Install useful Node.js packages in WSL
+    wsl sudo npm install -g typescript ts-node nodemon pm2 create-react-app @angular/cli @vue/cli
+    
+    Write-Success "WSL configured with comprehensive development tools"
+}
+
+function Configure-NodeJS {
+    Write-Status "Configuring Node.js and NPM..." $Blue
+    
+    # Set npm global directory to avoid permission issues
+    npm config set prefix "$env:APPDATA\npm"
+    npm config set cache "$env:APPDATA\npm-cache"
+    npm config set registry "https://registry.npmjs.org/"
+    
+    # Install useful global packages
+    $globalPackages = @("nodemon", "live-server", "http-server", "prettier", "eslint")
+    foreach ($package in $globalPackages) {
+        Write-Status "Installing global package: $package"
+        npm install -g $package --silent
+    }
+    
+    Write-Success "Node.js and NPM configured"
+}
+
+function Configure-VSCode {
+    Write-Status "Configuring VS Code..." $Blue
+    
+    $vscodeSettingsPath = "$env:APPDATA\Code\User\settings.json"
+    $vscodeSettings = @{
+        "terminal.integrated.defaultProfile.windows" = "PowerShell"
+        "terminal.integrated.profiles.windows" = @{
+            "PowerShell" = @{
+                "source" = "PowerShell"
+                "args" = @("-NoProfile")
+            }
+            "WSL" = @{
+                "path" = "wsl.exe"
+            }
+            "Git Bash" = @{
+                "source" = "Git Bash"
+            }
+        }
+        "git.defaultCloneDirectory" = "C:\Users\$env:USERNAME\Projects"
+        "git.confirmSync" = $false
+        "git.autofetch" = $true
+        "remote.WSL.useShellEnvironment" = $true
+        "docker.dockerPath" = "docker"
+        "extensions.autoUpdate" = $true
+        "workbench.startupEditor" = "newUntitledFile"
+        "editor.formatOnSave" = $true
+        "editor.codeActionsOnSave" = @{
+            "source.fixAll.eslint" = $true
+        }
+    }
+    
+    # Create VS Code User directory if it doesn't exist
+    $vscodeUserDir = Split-Path $vscodeSettingsPath
+    if (!(Test-Path $vscodeUserDir)) {
+        New-Item -Path $vscodeUserDir -ItemType Directory -Force | Out-Null
+    }
+    
+    # Write settings
+    $vscodeSettings | ConvertTo-Json -Depth 10 | Set-Content -Path $vscodeSettingsPath -Encoding UTF8
+    
+    # Install useful VS Code extensions
+    $extensions = @(
+        "ms-vscode-remote.remote-wsl",
+        "ms-vscode.powershell",
+        "ms-python.python",
+        "ms-vscode.vscode-json",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-eslint",
+        "gitlens.gitlens",
+        "ms-azuretools.vscode-docker"
+    )
+    
+    foreach ($extension in $extensions) {
+        Write-Status "Installing VS Code extension: $extension"
+        code --install-extension $extension --force
+    }
+    
+    Write-Success "VS Code configured"
+}
+
+function Configure-WindowsTerminal {
+    Write-Status "Configuring Windows Terminal..." $Blue
+    
+    $terminalSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+    
+    if (Test-Path $terminalSettingsPath) {
+        $terminalSettings = @{
+            "defaultProfile" = "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+            "profiles" = @{
+                "defaults" = @{
+                    "startingDirectory" = "C:\Users\$env:USERNAME"
+                }
+                "list" = @(
+                    @{
+                        "name" = "PowerShell"
+                        "source" = "Windows.Terminal.PowershellCore"
+                        "startingDirectory" = "C:\Users\$env:USERNAME"
+                        "colorScheme" = "Campbell Powershell"
+                    },
+                    @{
+                        "name" = "Ubuntu"
+                        "source" = "Windows.Terminal.Wsl"
+                        "startingDirectory" = "\\wsl$\Ubuntu\home\$env:USERNAME"
+                        "colorScheme" = "Ubuntu"
+                    },
+                    @{
+                        "name" = "Git Bash"
+                        "commandline" = "C:\Program Files\Git\bin\bash.exe"
+                        "startingDirectory" = "C:\Users\$env:USERNAME"
+                        "colorScheme" = "Campbell"
+                    }
+                )
+            }
+        }
+        
+        $terminalSettings | ConvertTo-Json -Depth 10 | Set-Content -Path $terminalSettingsPath -Encoding UTF8
+        Write-Success "Windows Terminal configured"
+    } else {
+        Write-Warning "Windows Terminal not found - skipping configuration"
+    }
+}
+
+function Test-Configuration {
+    Write-Status "Testing configuration..." $Blue
+    
+    $tests = @()
+    
+    # Test Git
+    try {
+        $gitVersion = git --version
+        $tests += @{ Name = "Git"; Status = "✓"; Version = $gitVersion }
+    } catch {
+        $tests += @{ Name = "Git"; Status = "✗"; Version = "Not found" }
+    }
+    
+    # Test Node
+    try {
+        $nodeVersion = node --version
+        $tests += @{ Name = "Node.js"; Status = "✓"; Version = $nodeVersion }
+    } catch {
+        $tests += @{ Name = "Node.js"; Status = "✗"; Version = "Not found" }
+    }
+    
+    # Test NPM
+    try {
+        $npmVersion = npm --version
+        $tests += @{ Name = "NPM"; Status = "✓"; Version = $npmVersion }
+    } catch {
+        $tests += @{ Name = "NPM"; Status = "✗"; Version = "Not found" }
+    }
+    
+    # Test Docker
+    try {
+        $dockerVersion = docker --version
+        $tests += @{ Name = "Docker"; Status = "✓"; Version = $dockerVersion }
+    } catch {
+        $tests += @{ Name = "Docker"; Status = "✗"; Version = "Not found" }
+    }
+    
+    # Test WSL
+    try {
+        $wslStatus = wsl --status
+        $tests += @{ Name = "WSL"; Status = "✓"; Version = "Running" }
+    } catch {
+        $tests += @{ Name = "WSL"; Status = "✗"; Version = "Not found" }
+    }
+    
+    # Test VS Code
+    try {
+        $codeVersion = code --version | Select-Object -First 1
+        $tests += @{ Name = "VS Code"; Status = "✓"; Version = $codeVersion }
+    } catch {
+        $tests += @{ Name = "VS Code"; Status = "✗"; Version = "Not found" }
+    }
+    
+    Write-Host "`n" -NoNewline
+    Write-Host "Configuration Test Results:" -ForegroundColor Cyan
+    Write-Host "=" * 50 -ForegroundColor Cyan
+    
+    foreach ($test in $tests) {
+        $color = if ($test.Status -eq "✓") { $Green } else { $Red }
+        Write-Host "$($test.Status) $($test.Name): $($test.Version)" -ForegroundColor $color
+    }
+    
+    Write-Host "=" * 50 -ForegroundColor Cyan
+}
+
+function Show-PostInstallInstructions {
+    Write-Host "`n" -NoNewline
+    Write-Host "🎉 Development Environment Setup Complete!" -ForegroundColor Green
+    Write-Host "=" * 60 -ForegroundColor Green
+    
+    Write-Host "`nNext Steps:" -ForegroundColor Yellow
+    Write-Host "1. Restart your terminal to apply all changes" -ForegroundColor White
+    Write-Host "2. Run 'dev-status' to check all tools" -ForegroundColor White
+    Write-Host "3. Use 'dev-update' to keep tools updated" -ForegroundColor White
+    Write-Host "4. Your projects directory: C:\Users\$env:USERNAME\Projects" -ForegroundColor White
+    
+    Write-Host "`nUseful Commands:" -ForegroundColor Yellow
+    Write-Host "• cdprojects  - Navigate to projects folder" -ForegroundColor White
+    Write-Host "• cdwsl       - Navigate to WSL home" -ForegroundColor White
+    Write-Host "• git-wsl     - Use Git in WSL" -ForegroundColor White
+    Write-Host "• code-wsl    - Open VS Code from WSL" -ForegroundColor White
+    
+    Write-Host "`nTo run this setup on another machine:" -ForegroundColor Yellow
+    Write-Host "Run this script as Administrator with your Git credentials:" -ForegroundColor White
+    Write-Host ".\setup-dev-environment.ps1 -GitUserName 'Your Name' -GitUserEmail 'your@email.com'" -ForegroundColor Gray
+    
+    Write-Host "=" * 60 -ForegroundColor Green
+}
+
+# Main execution
+function Main {
+    Write-Host "🚀 Universal Development Environment Setup" -ForegroundColor Cyan
+    Write-Host "This script will configure Git, WSL, VS Code, Docker, Node.js, and PowerShell" -ForegroundColor White
+    Write-Host ""
+    
+    if (!(Test-Administrator)) {
+        Write-Error "This script must be run as Administrator"
+        Write-Host "Right-click PowerShell and select 'Run as Administrator'" -ForegroundColor Yellow
+        exit 1
+    }
+    
+    try {
+        Install-Prerequisites
+        Configure-PowerShell
+        Configure-Git
+        Configure-WSL
+        Configure-NodeJS
+        Configure-VSCode
+        Configure-WindowsTerminal
+        Test-Configuration
+        Show-PostInstallInstructions
+        
+        Write-Success "Setup completed successfully!"
+        
+    } catch {
+        Write-Error "Setup failed: $($_.Exception.Message)"
+        Write-Host "Please check the error and try again" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+# Run the main function
+Main
