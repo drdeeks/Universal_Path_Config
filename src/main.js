@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 
 // Set custom user data path to avoid cache permission issues
-const userDataPath = path.join(os.homedir(), 'AppData', 'Local', 'universal-dev-setup');
+const userDataPath = path.join(os.homedir(), 'AppData', 'Local', 'Universal-Path-Config');
 app.setPath('userData', userDataPath);
 
 let mainWindow;

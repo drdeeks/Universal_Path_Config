@@ -1,5 +1,5 @@
 @echo off
-echo Universal Dev Setup - Update Diagnostics
+echo Universal Path Config - Update Diagnostics
 echo =======================================
 echo.
 
@@ -33,13 +33,13 @@ echo.
 
 REM Check for source executable
 echo 4. Checking source executable...
-if exist "dist\Universal Dev Setup 1.2.0 Portable.exe" (
+if exist "dist\Universal Path Config 1.2.0 Portable.exe" (
     echo ✅ Source executable found in dist folder
-    for %%A in ("dist\Universal Dev Setup 1.2.0 Portable.exe") do echo   Size: %%~zA bytes
-    for %%A in ("dist\Universal Dev Setup 1.2.0 Portable.exe") do echo   Date: %%~tA
+    for %%A in ("dist\Universal Path Config 1.2.0 Portable.exe") do echo   Size: %%~zA bytes
+    for %%A in ("dist\Universal Path Config 1.2.0 Portable.exe") do echo   Date: %%~tA
 ) else (
     echo ❌ Source executable NOT found in dist folder
-    echo Expected location: "%CD%\dist\Universal Dev Setup 1.2.0 Portable.exe"
+    echo Expected location: "%CD%\dist\Universal Path Config 1.2.0 Portable.exe"
 )
 echo.
 

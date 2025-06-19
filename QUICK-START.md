@@ -1,4 +1,4 @@
-# Quick Start Guide - Universal Dev Setup
+# Quick Start Guide - Universal Path Config
 
 ## 🚀 Fastest Way to Run the App
 

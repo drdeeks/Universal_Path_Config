@@ -1,4 +1,4 @@
-# Universal Dev Setup - Changelog
+# Universal Path Config - Changelog
 
 ## [1.3.0] - 2024-12-19
 
@@ -139,7 +139,7 @@
 - **Session Control**: Added comprehensive session management with clear user instructions
 - **Smart Termination**: New `stop-all-sessions.bat` script for clean shutdown of all app instances
 - **Emergency Failsafe**: New `kill-all-sessions.bat` script for force termination when needed
-- **Process Detection**: Intelligent identification of Universal Dev Setup processes
+- **Process Detection**: Intelligent identification of Universal Path Config processes
 - **User Guidance**: Built-in session management instructions displayed on startup
 
 #### Advanced Cleanup System

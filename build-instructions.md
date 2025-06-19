@@ -1,4 +1,4 @@
-# Build Instructions for Universal Dev Setup Executable
+# Build Instructions for Universal Path Config Executable
 
 ## Prerequisites
 
@@ -47,8 +47,8 @@ npm run postinstall
 npm run build
 ```
 **Output:**
-- `dist/Universal Dev Setup Setup 1.0.0.exe` (NSIS Installer)
-- `dist/Universal Dev Setup 1.0.0 Portable.exe` (Portable)
+- `dist/Universal Path Config Setup 1.0.0.exe` (NSIS Installer)
+- `dist/Universal Path Config 1.0.0 Portable.exe` (Portable)
 - `dist/win-unpacked/` (Unpacked app files)
 
 #### Option B: Windows-Specific Build
@@ -75,10 +75,10 @@ After building, check the `dist/` directory:
 
 ```
 dist/
-├── Universal Dev Setup Setup 1.0.0.exe     # Full installer (recommended)
-├── Universal Dev Setup 1.0.0 Portable.exe  # Portable version
+├── Universal Path Config Setup 1.0.0.exe     # Full installer (recommended)
+├── Universal Path Config 1.0.0 Portable.exe  # Portable version
 ├── win-unpacked/                            # Unpacked application
-│   ├── Universal Dev Setup.exe             # Main executable
+│   ├── Universal Path Config.exe             # Main executable
 │   ├── resources/                           # App resources
 │   └── ...                                 # Other runtime files
 ├── builder-effective-config.yaml           # Build configuration used

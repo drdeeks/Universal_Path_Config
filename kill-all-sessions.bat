@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title EMERGENCY SESSION KILLER - Universal Dev Setup
+title EMERGENCY SESSION KILLER - Universal Path Config
 
 :: Emergency failsafe - No prompts, immediate termination
-echo EMERGENCY SESSION KILLER - Universal Dev Setup
+echo EMERGENCY SESSION KILLER - Universal Path Config
 echo =============================================
 echo [!] EMERGENCY TERMINATION IN PROGRESS...
 echo.
@@ -40,7 +40,7 @@ for /f "tokens=2" %%a in ('tasklist /fo csv /fi "imagename eq cmd.exe" 2^>nul ^|
 echo [✓] Force terminated CMD processes
 
 :: Kill PowerShell processes that might be related
-taskkill /f /fi "WINDOWTITLE eq *Universal Dev Setup*" >nul 2>&1
+taskkill /f /fi "WINDOWTITLE eq *Universal Path Config*" >nul 2>&1
 echo [✓] Force terminated related PowerShell processes
 
 echo.

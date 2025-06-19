@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title Universal Dev Setup - Run as Administrator
+title Universal Path Config - Run as Administrator
 
 echo Universal Development Environment Setup
 echo ========================================
@@ -97,14 +97,14 @@ echo You can close this window once the app opens successfully.
 echo.
 
 :: Launch the app in a detached process so terminal can be closed
-start "Universal Dev Setup" npm start
+start "Universal Path Config" npm start
 
 :: Give the app a moment to start
 timeout /t 3 /nobreak >nul
 
 echo [✓] Application launched successfully!
 echo [i] You can now safely close this terminal window.
-echo [i] The Universal Dev Setup app is running independently.
+echo [i] The Universal Path Config app is running independently.
 echo.
 echo Press any key to close this terminal...
 pause >nul

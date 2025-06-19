@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title Universal Dev Setup - Run as Administrator (Safe Mode)
+title Universal Path Config - Run as Administrator (Safe Mode)
 
 echo Universal Development Environment Setup - SAFE MODE
 echo ====================================================
@@ -103,14 +103,14 @@ echo You can close this window once the app opens successfully.
 echo.
 
 :: Launch the app in a detached process so terminal can be closed
-start "Universal Dev Setup (Safe Mode)" npm run start-safe
+start "Universal Path Config (Safe Mode)" npm run start-safe
 
 :: Give the app a moment to start
 timeout /t 3 /nobreak >nul
 
 echo [✓] Application launched successfully in Safe Mode!
 echo [i] You can now safely close this terminal window.
-echo [i] The Universal Dev Setup app is running independently.
+echo [i] The Universal Path Config app is running independently.
 echo.
 echo Press any key to close this terminal...
 pause >nul

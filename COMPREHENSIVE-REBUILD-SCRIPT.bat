@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 
 echo.
 echo ====================================================
-echo    Universal Dev Setup v1.2.0 - Comprehensive Rebuild
+echo    Universal Path Config v1.2.0 - Comprehensive Rebuild
 echo ====================================================
 echo.
 

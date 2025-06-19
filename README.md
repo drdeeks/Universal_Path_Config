@@ -26,20 +26,20 @@
 - **Smart Termination**: Targeted process management with detailed identification
 - **Emergency Options**: Multiple termination methods for different scenarios
 - **User Guidance**: Clear instructions displayed during startup
-- **Process Detection**: Intelligent identification of Universal Dev Setup processes
+- **Process Detection**: Intelligent identification of Universal Path Config processes
 
 ## 🎯 Quick Start
 
 ### Option 1: Portable Executable (Recommended)
-1. **Download**: Get `Universal Dev Setup 1.2.0 Portable.exe`
+1. **Download**: Get `Universal Path Config 1.2.0 Portable.exe`
 2. **Run as Admin**: Right-click → "Run as Administrator"
 3. **Follow Setup**: Complete your development environment in minutes
 
 ### Option 2: From Source
 ```bash
 # Clone and setup
-git clone https://github.com/universal-dev-setup/universal-dev-setup.git
-cd universal-dev-setup
+git clone https://github.com/drdeeks/Universal-Path-Config.git
+cd Universal-Path-Config
 npm install
 
 # Run with automatic admin privileges
@@ -134,7 +134,7 @@ update-executable.bat
 **Backup Location**: `%APPDATA%\Local\dev-env-cleanup-backup\[timestamp]\`
 
 ### Session Management
-- **Smart Detection**: Identifies Universal Dev Setup processes specifically
+- **Smart Detection**: Identifies Universal Path Config processes specifically
 - **Safe Termination**: Targeted process termination with detailed reporting
 - **Emergency Mode**: Force-kill options for unresponsive sessions
 - **Process Reporting**: Shows exactly what was terminated
@@ -148,7 +148,7 @@ update-executable.bat
 ## 📊 Build Information
 
 ### Current Version: 1.2.0
-- **Portable Executable**: `Universal Dev Setup 1.2.0 Portable.exe`
+- **Portable Executable**: `Universal Path Config 1.2.0 Portable.exe`
 - **Build Target**: Windows x64
 - **Dependencies**: Electron 33.2.0, electron-builder 25.1.8
 - **Admin Requirements**: requireAdministrator execution level
@@ -184,7 +184,7 @@ npm run update           # Build + update executable
 ## 📁 Project Structure
 
 ```
-universal-dev-setup/
+Universal-Path-Config/
 ├── src/                          # Application source code
 │   ├── index.html               # Main UI
 │   ├── main.js                  # Electron main process (enhanced path resolution)
@@ -245,13 +245,13 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/universal-dev-setup/universal-dev-setup/issues)
+- **Issues**: [GitHub Issues](https://github.com/drdeeks/Universal-Path-Config/issues)
 - **Documentation**: Check [QUICK-START.md](QUICK-START.md) for detailed guides
 - **Build Issues**: Use diagnostic tools provided in the repository
 
 ---
 
-**Universal Dev Setup v1.2.0** - Your complete Windows development environment, professionally automated. ✨ 
+**Universal Path Config v1.2.0** - Your complete Windows development environment, professionally automated. ✨ 
 
 ## Features
 
@@ -288,7 +288,7 @@ After successful setup, you'll have access to these enhanced PowerShell function
 
 ## Project & Tool Migration
 
-The Universal Dev Setup now includes powerful migration capabilities to help you organize your existing development environment. This feature allows you to consolidate all your projects, tools, and configurations into a single, well-organized location.
+The Universal Path Config now includes powerful migration capabilities to help you organize your existing development environment. This feature allows you to consolidate all your projects, tools, and configurations into a single, well-organized location.
 
 ### How Migration Works
 

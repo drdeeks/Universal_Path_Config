@@ -1,13 +1,13 @@
 @echo off
 setlocal enabledelayedexpansion
-title Universal Dev Setup - Session Manager (STOP ALL)
+title Universal Path Config - Session Manager (STOP ALL)
 
 echo Universal Development Environment Setup - Session Manager
 echo ==========================================================
 echo [!] STOP ALL SESSIONS - Emergency Session Termination
 echo.
 
-echo [→] Searching for running Universal Dev Setup sessions...
+echo [→] Searching for running Universal Path Config sessions...
 echo.
 
 :: Initialize counters
@@ -33,7 +33,7 @@ for /f "tokens=2 delims=," %%a in ('tasklist /fo csv /fi "imagename eq electron.
 :: Kill Node.js processes that might be running our app
 echo [→] Terminating Node.js instances running our app...
 for /f "tokens=2,9 delims=," %%a in ('tasklist /fo csv /fi "imagename eq node.exe" 2^>nul ^| find "node.exe"') do (
-    echo %%b | find "universal-dev-setup" >nul
+    echo %%b | find "Universal-Path-Config" >nul
     if !errorLevel! == 0 (
         set /a node_count+=1
         echo    Killing Node.js PID: %%~a (%%b)
@@ -87,16 +87,16 @@ echo.
 
 if !total_killed! gtr 0 (
     echo [✓] Successfully terminated !total_killed! session(s)
-    echo [i] All Universal Dev Setup sessions have been stopped
+    echo [i] All Universal Path Config sessions have been stopped
 ) else (
-    echo [i] No running Universal Dev Setup sessions found
+    echo [i] No running Universal Path Config sessions found
     echo [i] All sessions appear to be already stopped
 )
 
 echo.
 echo [i] Additional cleanup options:
-echo  - Clear Electron cache: Delete "%USERPROFILE%\AppData\Roaming\universal-dev-setup"
-echo  - Clear local data: Delete "%USERPROFILE%\AppData\Local\universal-dev-setup"
+echo  - Clear Electron cache: Delete "%USERPROFILE%\AppData\Roaming\Universal-Path-Config"
+echo  - Clear local data: Delete "%USERPROFILE%\AppData\Local\Universal-Path-Config"
 echo  - Reset node_modules: Delete the node_modules folder in the app directory
 echo.
 
