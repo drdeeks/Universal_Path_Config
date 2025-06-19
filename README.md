@@ -1,4 +1,4 @@
-# Universal Development Environment Setup v1.2.0
+# Universal Pth Config v1.2.0
 
 🚀 **Complete Windows development environment setup with one click** - featuring enhanced Python detection, robust path configuration, comprehensive cleanup system, and professional session management.
 
