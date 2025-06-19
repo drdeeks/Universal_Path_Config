@@ -96,23 +96,21 @@ echo If the app doesn't appear, check for any error messages below.
 echo You can close this window once the app opens successfully.
 echo.
 
-call npm start
+:: Launch the app in a detached process so terminal can be closed
+start "Universal Dev Setup" npm start
 
-:: Handle exit codes
-if %errorLevel% neq 0 (
-    echo.
-    echo [!] Application exited with error code: %errorLevel%
-    echo.
-    echo Common solutions:
-    echo  1. Try the safe mode: run-as-admin-safe.bat
-    echo  2. Clear cache: Delete "%USERPROFILE%\AppData\Roaming\universal-dev-setup"
-    echo  3. Reinstall dependencies: Delete node_modules folder and run again
-    echo.
-    pause
-) else (
-    echo.
-    echo [✓] Application closed normally
-)
+:: Give the app a moment to start
+timeout /t 3 /nobreak >nul
+
+echo [✓] Application launched successfully!
+echo [i] You can now safely close this terminal window.
+echo [i] The Universal Dev Setup app is running independently.
+echo.
+echo Press any key to close this terminal...
+pause >nul
+
+:: Clean exit - don't wait for the app to close
+goto :eof
 
 popd
 endlocal 

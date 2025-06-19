@@ -818,7 +818,17 @@ class DevSetupApp {
         if (type === 'tool') {
             details.textContent = `Type: ${item.type} | Size: ${this.formatFileSize(item.size)}`;
         } else if (type === 'project') {
-            details.textContent = `Projects: ${item.projectCount} | Size: ${this.formatFileSize(item.size)}`;
+            let projectDetails = `Projects: ${item.projectCount} | Size: ${this.formatFileSize(item.size)}`;
+            if (item.projects && item.projects.length > 0) {
+                // Add project types info
+                const projectTypes = [...new Set(item.projects.map(p => p.type))];
+                if (projectTypes.length <= 3) {
+                    projectDetails += ` | Types: ${projectTypes.join(', ')}`;
+                } else {
+                    projectDetails += ` | Types: ${projectTypes.slice(0, 2).join(', ')} +${projectTypes.length - 2} more`;
+                }
+            }
+            details.textContent = projectDetails;
         } else if (type === 'config') {
             details.textContent = `Size: ${this.formatFileSize(item.size)} | Modified: ${new Date(item.lastModified).toLocaleDateString()}`;
         }

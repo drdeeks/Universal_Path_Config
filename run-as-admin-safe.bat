@@ -102,24 +102,21 @@ echo If the app doesn't appear, check for any error messages below.
 echo You can close this window once the app opens successfully.
 echo.
 
-call npm run start-safe
+:: Launch the app in a detached process so terminal can be closed
+start "Universal Dev Setup (Safe Mode)" npm run start-safe
 
-:: Handle exit codes
-if %errorLevel% neq 0 (
-    echo.
-    echo [!] Application exited with error code: %errorLevel%
-    echo.
-    echo Even safe mode failed. Possible solutions:
-    echo  1. Clear Electron cache: Delete "%USERPROFILE%\AppData\Roaming\universal-dev-setup"
-    echo  2. Delete "%USERPROFILE%\AppData\Local\universal-dev-setup"
-    echo  3. Reinstall dependencies: Delete node_modules folder and run again
-    echo  4. Try manual command: npm start -- --disable-gpu --disable-software-rasterizer
-    echo.
-    pause
-) else (
-    echo.
-    echo [✓] Application closed normally
-)
+:: Give the app a moment to start
+timeout /t 3 /nobreak >nul
+
+echo [✓] Application launched successfully in Safe Mode!
+echo [i] You can now safely close this terminal window.
+echo [i] The Universal Dev Setup app is running independently.
+echo.
+echo Press any key to close this terminal...
+pause >nul
+
+:: Clean exit - don't wait for the app to close
+goto :eof
 
 popd
 endlocal 

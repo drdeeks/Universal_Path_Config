@@ -903,175 +903,73 @@ audit-level=moderate
 async function verifyCrossPlatformSetup(results, event) {
   event.sender.send('setup-output', '🌐 Verifying cross-platform setup...');
   
-  // Check WSL integration with improved error handling
+  // Simplified WSL detection - much more reliable
   try {
-    // First check if WSL is installed
     event.sender.send('setup-output', '[INFO] Checking WSL availability...');
     
-    const wslStatusResult = await Promise.race([
-      runCommandWithTimeout('wsl --status', 3000),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('WSL status check timeout')), 3000))
-    ]);
+    // Simple WSL test - just try to run a basic command
+    await runCommandWithTimeout('wsl --status', 10000);
+    event.sender.send('setup-output', '[INFO] WSL detected, testing functionality...');
     
-    event.sender.send('setup-output', '[INFO] WSL detected, checking distributions...');
+    // Test WSL basic functionality with multiple approaches
+    let wslWorking = false;
+    let testResult = '';
     
-    // Check available WSL distributions with much more robust parsing
-    const wslDistResult = await Promise.race([
-      runCommandWithTimeout('wsl --list --online', 3000),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('WSL list timeout')), 3000))
-    ]);
-    
-    // More robust WSL distribution parsing
-    const validDistNames = ['Ubuntu', 'Debian', 'Fedora', 'openSUSE', 'Alpine', 'kali-linux', 'SUSE', 'Oracle', 'docker-desktop'];
-    const distributions = [];
-    
-    // Use the simplest approach that works - direct WSL command
-    let installedDistResult;
     try {
-      // Direct WSL command - we know this works from testing
-      installedDistResult = await Promise.race([
-        runCommandWithTimeout('wsl --list --quiet', 3000),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('WSL list timeout')), 3000))
-      ]);
-    } catch (error) {
-      console.log('WSL list command failed:', error.message);
-      throw error;
-    }
-    
-    console.log('Raw WSL output:', JSON.stringify(installedDistResult));
-    
-    // Clean and parse the output - handle UTF-16 encoding with null bytes
-    let cleanOutput = installedDistResult
-      .replace(/Development Environment Ready!/g, '')
-      .replace(/Projects: .*$/gm, '')
-      .replace(/Quick commands: .*$/gm, '')
-      .replace(/PS .*>.*$/gm, '')
-      .trim();
-    
-    // Remove UTF-16 null bytes that Windows WSL command sometimes outputs
-    cleanOutput = cleanOutput.replace(/\u0000/g, '');
-    
-    // Also handle carriage returns and line feeds properly
-    cleanOutput = cleanOutput.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
-    console.log('Cleaned WSL output:', JSON.stringify(cleanOutput));
-    
-    // Parse distribution names from clean output
-    const lines = cleanOutput
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .filter(line => !line.includes('Environment'))
-      .filter(line => !line.includes('Projects:'))
-      .filter(line => !line.includes('Quick'))
-      .filter(line => !line.includes('commands:'))
-      .filter(line => !line.includes('Ready!'))
-      .filter(line => !line.includes('PS '));
-    
-    console.log('Filtered lines:', JSON.stringify(lines));
-    
-    for (const line of lines) {
-      const distName = line.trim();
-      
-      // Only accept valid distribution names
-      if (distName && 
-          distName.length > 2 && 
-          !distName.includes(':') &&
-          !distName.includes(' ') &&
-          (validDistNames.some(valid => distName.toLowerCase().includes(valid.toLowerCase())) ||
-           distName.match(/^[A-Za-z][A-Za-z0-9\-]*$/))) {
-        if (!distributions.includes(distName)) {
-          distributions.push(distName);
-        }
+      // Try basic echo first
+      testResult = await runCommandWithTimeout('wsl echo "WSL_WORKING"', 10000);
+      if (testResult && testResult.trim() === 'WSL_WORKING') {
+        wslWorking = true;
       }
+    } catch (echoError) {
+      console.log('WSL echo test failed:', echoError.message);
     }
     
-    console.log('Parsed WSL distributions:', distributions);
-    
-    if (distributions.length === 0) {
-      // Try one more approach - direct WSL test
+    // If echo failed, try a simpler command
+    if (!wslWorking) {
       try {
-        // Try multiple WSL commands to ensure detection
-        try {
-          await runCommandWithTimeout('wsl --status', 3000);
-          await runCommandWithTimeout('wsl echo "test"', 5000);
-          results.fixes.push('WSL is available but distribution names unclear - manual configuration may be needed');
-          event.sender.send('setup-output', '[OK] WSL is working - distribution detection needs refinement');
-          event.sender.send('setup-output', '[INFO] You can manually configure WSL by adding aliases to ~/.bashrc');
-          return; // WSL is working, just distribution parsing failed
-        } catch (statusError) {
-          results.issues.push('WSL is installed but no valid distributions found - install Ubuntu or another distribution');
-          event.sender.send('setup-output', '[WARN] No WSL distributions found or WSL not working');
-          event.sender.send('setup-output', '[INFO] To install Ubuntu: wsl --install -d Ubuntu');
+        testResult = await runCommandWithTimeout('wsl pwd', 10000);
+        if (testResult && testResult.trim().length > 0) {
+          wslWorking = true;
+          event.sender.send('setup-output', '[INFO] WSL responding with alternative test');
         }
-      } catch (testError) {
-        results.issues.push('WSL is installed but no valid distributions found - install Ubuntu or another distribution');
-        event.sender.send('setup-output', '[WARN] No WSL distributions found or WSL not working');
-        event.sender.send('setup-output', '[INFO] To install Ubuntu: wsl --install -d Ubuntu');
+      } catch (pwdError) {
+        console.log('WSL pwd test failed:', pwdError.message);
       }
-      return;
     }
     
-    event.sender.send('setup-output', `[INFO] Found ${distributions.length} WSL distribution(s): ${distributions.join(', ')}`);
-    event.sender.send('setup-output', '[INFO] Configuring cross-platform integration...');
-    
-    // Create simple WSL configuration for the first available distribution
-    const primaryDist = distributions[0];
-    try {
-      // Try to add configuration to WSL using a safer approach
-      // Use individual commands to avoid PowerShell string issues
-      const configLines = [
-        '# WSL Dev Environment Integration',
-        'export WINDOWS_HOME="/mnt/c/Users/$USER"',
-        'export PROJECTS_WIN="$WINDOWS_HOME/Projects"',
-        'export PROJECTS_WSL="$HOME/projects"',
-        '[ ! -d "$PROJECTS_WSL" ] && mkdir -p "$PROJECTS_WSL"',
-        'alias cdprojects="cd $PROJECTS_WIN"',
-        'alias cdwsl="cd $PROJECTS_WSL"', 
-        'alias cdwin="cd $WINDOWS_HOME"',
-        'echo "WSL Environment Ready!"',
-        'echo "Projects: $PROJECTS_WIN"',
-        'echo "Quick commands: cdprojects, cdwsl, cdwin"'
-      ];
+    if (wslWorking) {
+      event.sender.send('setup-output', '[OK] WSL is functional and available for cross-platform development');
+      results.fixes.push('WSL cross-platform integration verified and working');
       
-      // Add configuration line by line to avoid string escaping issues
-      for (const line of configLines) {
-        const safeCommand = `wsl -d ${primaryDist} bash -c "echo '${line}' >> ~/.bashrc"`;
-        try {
-          await Promise.race([
-            runCommandWithTimeout(safeCommand, 2000),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Line config timeout')), 2000))
-          ]);
-        } catch (lineError) {
-          // Continue with other lines even if one fails
-          console.log(`Failed to add line: ${line}`, lineError.message);
+      // Try to get distribution info for logging, but don't fail if it doesn't work
+      try {
+        const distInfo = await runCommandWithTimeout('wsl --list --quiet', 3000);
+        if (distInfo && distInfo.trim()) {
+          event.sender.send('setup-output', `[INFO] WSL distributions available: ${distInfo.trim().replace(/\s+/g, ', ')}`);
         }
+      } catch (distError) {
+        // Don't fail - just log that we couldn't get distribution details
+        event.sender.send('setup-output', '[INFO] WSL working but distribution details unavailable');
       }
-      
-      results.fixes.push(`WSL cross-platform integration configured for ${primaryDist}`);
-      event.sender.send('setup-output', `[OK] WSL integration configured for ${primaryDist}`);
-    } catch (wslConfigError) {
-      console.log('WSL configuration failed:', wslConfigError.message);
-      results.issues.push(`WSL configuration failed: ${wslConfigError.message}`);
-      event.sender.send('setup-output', '[WARN] WSL configuration failed - you can manually add the configuration');
-      event.sender.send('setup-output', `[INFO] Manual setup: Run 'wsl -d ${primaryDist}' and add aliases to ~/.bashrc`);
+    } else {
+      // WSL installed but having issues
+      event.sender.send('setup-output', '[WARN] WSL is installed but may need configuration');
+      event.sender.send('setup-output', '[INFO] Try: wsl --install -d Ubuntu-24.04');
+      results.issues.push('WSL installed but not properly configured - install a distribution');
     }
     
   } catch (error) {
     console.log('WSL check failed:', error.message);
     
-    if (error.message.includes('timeout')) {
-      results.issues.push('WSL check timed out - WSL may not be properly installed');
-      event.sender.send('setup-output', '[WARN] WSL check timed out - WSL may not be installed or configured');
-      event.sender.send('setup-output', '[INFO] To install WSL: wsl --install');
-    } else if (error.message.includes('not recognized')) {
-      results.issues.push('WSL command not found - install WSL for cross-platform development');
-      event.sender.send('setup-output', '[WARN] WSL not installed - cross-platform features will be limited');
-      event.sender.send('setup-output', '[INFO] Install WSL with: wsl --install');
-    } else {
-      results.issues.push('WSL not available - install WSL for cross-platform development');
+    if (error.message.includes('not recognized')) {
+      results.issues.push('WSL not installed - install WSL for cross-platform development');
       event.sender.send('setup-output', '[WARN] WSL not available - cross-platform features will be limited');
       event.sender.send('setup-output', '[INFO] Install WSL with: wsl --install');
+    } else {
+      results.issues.push('WSL check failed - manual configuration may be needed');
+      event.sender.send('setup-output', '[WARN] WSL check failed - cross-platform features may be limited');
+      event.sender.send('setup-output', '[INFO] Verify WSL installation: wsl --status');
     }
   }
   
@@ -1883,7 +1781,8 @@ ipcMain.handle('scan-for-existing-tools', async () => {
       { name: 'Gradle', paths: ['C:\\Gradle', path.join(os.homedir(), '.gradle')], type: 'gradle' },
       { name: 'Go', paths: ['C:\\Program Files\\Go', 'C:\\Go'], type: 'go' },
       { name: 'Rust', paths: [path.join(os.homedir(), '.cargo'), path.join(os.homedir(), '.rustup')], type: 'rust' },
-      { name: 'WSL Ubuntu', paths: ['\\\\wsl$\\Ubuntu', '\\\\wsl.localhost\\Ubuntu'], type: 'wsl' }
+      { name: 'WSL Ubuntu', paths: ['\\\\wsl$\\Ubuntu', '\\\\wsl.localhost\\Ubuntu'], type: 'wsl' },
+      { name: 'WSL Ubuntu 24.04', paths: ['\\\\wsl$\\Ubuntu-24.04', '\\\\wsl.localhost\\Ubuntu-24.04'], type: 'wsl' }
     ];
     
     // Scan for project directories in common locations
@@ -1900,6 +1799,7 @@ ipcMain.handle('scan-for-existing-tools', async () => {
       'C:\\Projects',
       'C:\\Code',
       'C:\\Development',
+      'C:\\deekswork\\Projects',  // Add custom project path
       'D:\\Projects',
       'D:\\Code',
       'D:\\Development'
@@ -1955,20 +1855,124 @@ ipcMain.handle('scan-for-existing-tools', async () => {
         if (fs.existsSync(projectPath)) {
           const stats = fs.statSync(projectPath);
           if (stats.isDirectory()) {
-            const projects = fs.readdirSync(projectPath);
-            const projectCount = projects.filter(item => {
+            const items = fs.readdirSync(projectPath);
+            const detectedProjects = [];
+            
+            // Check each subdirectory for development project indicators
+            for (const item of items) {
               const itemPath = path.join(projectPath, item);
               try {
-                return fs.statSync(itemPath).isDirectory();
-              } catch {
-                return false;
+                if (fs.statSync(itemPath).isDirectory()) {
+                  // Check for development project indicators
+                  const projectIndicators = [
+                    '.git',                    // Git repository
+                    'package.json',           // Node.js project
+                    'requirements.txt',       // Python project
+                    'setup.py',              // Python project
+                    'pyproject.toml',        // Modern Python project
+                    'Cargo.toml',            // Rust project
+                    'pom.xml',               // Maven/Java project
+                    'build.gradle',          // Gradle project
+                    'build.gradle.kts',      // Kotlin Gradle project
+                    '.sln',                  // Visual Studio solution
+                    '.csproj',               // C# project
+                    '.vbproj',               // VB.NET project
+                    '.fsproj',               // F# project
+                    'go.mod',                // Go module
+                    'composer.json',         // PHP Composer project
+                    'Gemfile',               // Ruby project
+                    'CMakeLists.txt',        // CMake project
+                    'Makefile',              // Make project
+                    'Dockerfile',            // Docker project
+                    'docker-compose.yml',    // Docker Compose
+                    'tsconfig.json',         // TypeScript project
+                    '.gitignore',            // Common in projects
+                    'README.md',             // Documentation (weaker indicator)
+                    'LICENSE'                // License file (weaker indicator)
+                  ];
+                  
+                  let isProject = false;
+                  let projectType = 'unknown';
+                  const foundIndicators = [];
+                  
+                  for (const indicator of projectIndicators) {
+                    const indicatorPath = path.join(itemPath, indicator);
+                    if (fs.existsSync(indicatorPath)) {
+                      foundIndicators.push(indicator);
+                      
+                      // Determine project type based on indicators
+                      if (indicator === 'package.json') {
+                        projectType = 'Node.js';
+                        isProject = true;
+                        break;
+                      } else if (indicator === 'requirements.txt' || indicator === 'setup.py' || indicator === 'pyproject.toml') {
+                        projectType = 'Python';
+                        isProject = true;
+                        break;
+                      } else if (indicator === 'Cargo.toml') {
+                        projectType = 'Rust';
+                        isProject = true;
+                        break;
+                      } else if (indicator === 'pom.xml') {
+                        projectType = 'Java (Maven)';
+                        isProject = true;
+                        break;
+                      } else if (indicator === 'build.gradle' || indicator === 'build.gradle.kts') {
+                        projectType = 'Java/Kotlin (Gradle)';
+                        isProject = true;
+                        break;
+                      } else if (indicator === '.sln' || indicator === '.csproj') {
+                        projectType = 'C#/.NET';
+                        isProject = true;
+                        break;
+                      } else if (indicator === 'go.mod') {
+                        projectType = 'Go';
+                        isProject = true;
+                        break;
+                      } else if (indicator === 'composer.json') {
+                        projectType = 'PHP';
+                        isProject = true;
+                        break;
+                      } else if (indicator === 'Gemfile') {
+                        projectType = 'Ruby';
+                        isProject = true;
+                        break;
+                      } else if (indicator === '.git') {
+                        if (!isProject) {
+                          projectType = 'Git Repository';
+                          isProject = true;
+                        }
+                      } else if (indicator === 'Dockerfile') {
+                        if (!isProject) {
+                          projectType = 'Docker';
+                          isProject = true;
+                        }
+                      }
+                    }
+                  }
+                  
+                  // Add the project if it has valid indicators
+                  if (isProject) {
+                    detectedProjects.push({
+                      name: item,
+                      path: itemPath,
+                      type: projectType,
+                      indicators: foundIndicators,
+                      size: getDirectorySize(itemPath)
+                    });
+                  }
+                }
+              } catch (itemError) {
+                // Skip items that can't be accessed
+                continue;
               }
-            }).length;
+            }
             
-            if (projectCount > 0) {
+            if (detectedProjects.length > 0) {
               scanResults.projectDirectories.push({
                 path: projectPath,
-                projectCount: projectCount,
+                projectCount: detectedProjects.length,
+                projects: detectedProjects,
                 size: getDirectorySize(projectPath),
                 lastModified: stats.mtime
               });
